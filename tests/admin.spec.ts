@@ -1,0 +1,15 @@
+﻿import { test, expect } from '@playwright/test'
+import AxeBuilder from '@axe-core/playwright'
+test('BGH edits a draft and parent sees locally saved menu',async({page})=>{
+ await page.goto('/');await page.getByRole('button',{name:'Chuyển không gian làm việc'}).click();await page.getByRole('button',{name:'Ban Giám hiệu'}).click();await expect(page.getByRole('heading',{name:'Chăm chút bữa ăn, mỗi ngày.'})).toBeVisible()
+ await page.getByRole('link',{name:'Thực đơn & bữa ăn',exact:true}).click();await page.getByRole('button',{name:'Chỉnh bản nháp'}).click();await page.getByRole('textbox',{name:'Danh sách món (mỗi dòng một món)'}).fill('Cơm gạo lứt\nCá hấp\nCanh bí xanh');await page.getByRole('spinbutton',{name:'Số suất dự kiến'}).fill('490');await page.getByRole('button',{name:'Lưu bản nháp'}).click();await expect(page.getByText('Cá hấp',{exact:true})).toBeVisible()
+ await page.getByRole('button',{name:'Chuyển không gian làm việc'}).click();await page.getByRole('button',{name:'Phụ huynh'}).click();await expect(page.getByText('Cá hấp',{exact:true})).toBeVisible();await expect(page.locator('.stat-value').first()).toContainText('490')
+})
+test('kitchen dispatch needs photo, receiving belongs to board, CSV downloads',async({page})=>{
+ await page.goto('/');await page.getByRole('button',{name:'Chuyển không gian làm việc'}).click();await page.getByRole('button',{name:'Bếp trung tâm'}).click();await page.getByRole('link',{name:'Tiến trình suất ăn'}).click();await page.getByRole('button',{name:'Xuất bếp + ảnh'}).click();await page.getByLabel('Ảnh minh họa cho mốc',{exact:true}).setInputFiles('public/meal-demo.jpg');await page.getByRole('button',{name:'Lưu mốc minh họa'}).click();await expect(page.getByText('Đã ghi nhận mốc vận hành trên trình duyệt DEMO.')).toBeVisible();await expect(page.getByRole('button',{name:'Đã đến trường',exact:true})).toHaveCount(0);await expect(page.getByText('Sau xuất bếp, các mốc đến trường/ra món/sẵn sàng thuộc chế độ xem BGH.')).toBeVisible()
+ await page.getByRole('link',{name:'Báo cáo tổng hợp'}).click();const download=page.waitForEvent('download');await page.getByRole('button',{name:'Xuất CSV'}).click();expect((await download).suggestedFilename()).toContain('DEMO')
+})
+test('ward overview and mobile administration are responsive and accessible',async({page})=>{
+ await page.goto('/');await page.getByRole('button',{name:'Chuyển không gian làm việc'}).click();await page.getByRole('button',{name:'Phòng Văn hóa – Xã hội'}).click();await expect(page.getByRole('heading',{name:'Một góc nhìn, toàn địa bàn.'})).toBeVisible();await page.screenshot({path:'docs/screenshots/ward-desktop.png',fullPage:true});const results=await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa']).analyze();expect(results.violations.map(v=>({id:v.id,nodes:v.nodes.map(n=>({target:n.target,summary:n.failureSummary}))}))).toEqual([])
+ await page.setViewportSize({width:390,height:844});expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);await page.screenshot({path:'docs/screenshots/ward-mobile.png',fullPage:true})
+})
