@@ -55,3 +55,8 @@ Theo yêu cầu mới, popup mobile (tài khoản, form, ngày, chi tiết, ản
 
 ## Sửa lỗi popup lô nguyên liệu ở góc trái trên
 Đã tái hiện desktop 1440px: dialog có x=0, y=0 và margin=0 do reset CSS. Bản sửa trước chỉ căn giữa trong media query mobile. Đã đặt `position: fixed; inset: 0; margin: auto` vào quy tắc dialog chung trong `src/App.css`. Kiểm thử hồi quy đúng popup “Thông tin lô nguyên liệu DEMO” trên 390/768/1440px kiểm tra tâm ngang/dọc và nút đóng. Build đạt.
+
+## Bộ chọn theo phong cách Apple
+Thay cả ba select (trường, loại ý kiến, trạng thái suất ăn) bằng `src/components/ui/Select.tsx` và `Select.css`. Menu bo góc, viền mảnh, dấu tích, mô tả phụ, active highlight theo bảng màu và dark mode. Dùng native Popover top layer để không bị hero/card/dialog cắt menu; tự tính vị trí và giới hạn theo viewport. Runtime chưa hỗ trợ Popover dùng select native đã style.
+
+Có combobox/listbox semantics, phím mũi tên/Home/End, Enter/Space, Escape, Tab, tìm bằng gõ ký tự, click ngoài để đóng; tích hợp React Hook Form bằng Controller. Không thay dữ liệu hoặc backend. Đã kiểm tra chọn mục trong dialog, đổi trường/counter, lọc danh sách, menu ở viewport 375px và axe khi menu mở. Bổ sung `tests/select.spec.ts`, cập nhật kiểm thử chọn trường hiện có. Sửa role của loading state để hỗ trợ nhãn accessible.

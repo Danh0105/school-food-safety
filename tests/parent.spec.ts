@@ -2,7 +2,7 @@
 import AxeBuilder from '@axe-core/playwright'
 test('parent journey, school/date changes and private demo feedback',async({page})=>{
  await page.goto('/');await expect(page.getByRole('heading',{name:'Bữa ăn của con, an tâm của bạn.'})).toBeVisible()
- await page.getByRole('combobox',{name:'Chọn trường'}).selectOption('binh-an');await expect(page.locator('.stat-value').first()).toContainText('216');await expect(page.getByText('Nấu tại trường',{exact:true})).toBeVisible()
+ await page.getByRole('combobox',{name:'Chọn trường'}).click();await page.getByRole('option',{name:/Mầm non Bình An/}).click();await expect(page.locator('.stat-value').first()).toContainText('216');await expect(page.getByText('Nấu tại trường',{exact:true})).toBeVisible()
  await page.getByRole('button',{name:'Góp ý thực đơn',exact:false}).click();await page.getByRole('textbox',{name:'Nội dung'}).fill('Mong nhà trường bổ sung thêm các món rau củ theo mùa.');await page.getByRole('button',{name:'Gửi ý kiến',exact:true}).click();await expect(page.getByText('Đã lưu vào trình duyệt DEMO, chưa gửi đến nhà trường.')).toBeVisible();await page.getByRole('button',{name:'Hoàn tất'}).click()
  await page.getByRole('link',{name:'Phản ánh & góp ý',exact:true}).click();await expect(page.getByText('Mong nhà trường bổ sung thêm các món rau củ theo mùa.')).toBeVisible();await page.reload();await expect(page.getByText('Mong nhà trường bổ sung thêm các món rau củ theo mùa.')).toBeVisible()
 })
