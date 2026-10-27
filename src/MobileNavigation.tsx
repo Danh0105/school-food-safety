@@ -1,10 +1,11 @@
 ﻿import { NavLink } from 'react-router-dom'
 import { House, Utensils, QrCode, MessageCircle, UserRound, Activity, Menu } from 'lucide-react'
-import type { ViewRole } from './lib/store'
+import type { CentralKitchenRole, ViewRole } from './lib/store'
 import './MobileApp.css'
-type Props={role:ViewRole;account:()=>void;more:()=>void;accountOpen:boolean}
-export default function MobileNavigation({role,account,more,accountOpen}:Props){
- const items=role==='parent'?[{path:'/',label:'Trang chủ',icon:House},{path:'/bua-an',label:'Bữa ăn',icon:Utensils},{path:'/nguon-goc',label:'Truy xuất',icon:QrCode},{path:'/phan-anh',label:'Phản ánh',icon:MessageCircle}]:[{path:'/',label:'Tổng quan',icon:House},{path:'/van-hanh',label:'Vận hành',icon:Activity},{path:'/thuc-don',label:'Thực đơn',icon:Utensils}]
+type Props={role:ViewRole;kitchenRole:CentralKitchenRole;account:()=>void;more:()=>void;accountOpen:boolean}
+export default function MobileNavigation({role,kitchenRole,account,more,accountOpen}:Props){
+ const kitchenItems=kitchenRole==='sanitation'?[{path:'/',label:'Công việc',icon:House},{path:'/giam-sat',label:'Giám sát',icon:Activity},{path:'/ho-so',label:'Hồ sơ',icon:QrCode}]:kitchenRole==='dispatcher'?[{path:'/',label:'Công việc',icon:House},{path:'/van-hanh',label:'Điều phối',icon:Activity},{path:'/ma-qr-suat-an',label:'QR suất ăn',icon:QrCode}]:kitchenRole==='packing'?[{path:'/',label:'Công việc',icon:House},{path:'/ma-qr-suat-an',label:'QR suất ăn',icon:QrCode},{path:'/thuc-don',label:'Thực đơn',icon:Utensils}]:[{path:'/',label:kitchenRole==='manager'?'Tổng quan':'Công việc',icon:House},{path:'/van-hanh',label:'Vận hành',icon:Activity},{path:'/thuc-don',label:'Thực đơn',icon:Utensils}]
+ const items=role==='parent'?[{path:'/',label:'Trang chủ',icon:House},{path:'/bua-an',label:'Bữa ăn',icon:Utensils},{path:'/nguon-goc',label:'Truy xuất',icon:QrCode},{path:'/phan-anh',label:'Phản ánh',icon:MessageCircle}]:role==='central_kitchen'?kitchenItems:[{path:'/',label:'Tổng quan',icon:House},{path:'/van-hanh',label:'Vận hành',icon:Activity},{path:'/thuc-don',label:'Thực đơn',icon:Utensils}]
  return <nav className="mobile-tabbar" aria-label="Điều hướng chính trên điện thoại">{items.map(item=><NavLink key={item.path} to={item.path} end={item.path==='/'} className={({isActive})=>isActive&&!accountOpen?'tab-active':''}><span className="tab-icon"><item.icon size={22} strokeWidth={1.8}/></span><span>{item.label}</span></NavLink>)}{role!=='parent'&&<button onClick={more}><span className="tab-icon"><Menu size={22}/></span><span>Thêm</span></button>}<button className={accountOpen?'tab-active':''} onClick={account} aria-label="Tài khoản" aria-pressed={accountOpen}><span className="tab-icon"><UserRound size={22} strokeWidth={1.8}/></span><span>Tài khoản</span></button></nav>
 }
 

@@ -86,37 +86,45 @@
   .role-options strong{font-size:17px}
   .role-options small{font-size:13px;line-height:1.6}
 }
-/* Palette inspired by the supplied cobalt, warm wood and golden architecture. */
-:root{--accent:#d89a30;--accent-soft:#fbf0da;--shadow:0 3px 15px #17285104;background:var(--canvas);color:var(--text)}
-:root[data-theme=dark]{--canvas:#0e1422;--surface:#192132;--surface-alt:#202a3d;--border:#333d52;--green-soft:#253454;--primary:#a9bfff;--primary-dark:#ccd8ff;--muted:#bbc3d4;--accent:#edbf70;--accent-soft:#3b3020}
+/* Cobalt blue, warm ivory and golden accents from the supplied reference. */
+:root{background:var(--canvas);color:var(--text)}
+:root[data-theme=dark]{--canvas:#0d1422;--surface:#172033;--surface-alt:#202b40;--border:#35415a;--green-soft:var(--primary-soft);--muted:#b8c1d3}
+.app-shell,.main-wrap{background:var(--canvas)}
 .school-hero{min-height:220px;background-image:linear-gradient(90deg,rgba(19,39,99,.98) 0%,rgba(21,43,106,.91) 38%,rgba(20,38,83,.3) 72%,rgba(20,38,83,.12)),url('/images/canteen/view-8.jpg');background-size:cover;background-position:center,center 53%}.hero-art{display:none}.hero-content{max-width:100%;padding:30px 32px}.hero-eyebrow{color:#f3d49c}.hero-address,.hero-bottom{color:#e0e7fc}.hero-content .live-dot{background:#efbd63}.brand-symbol{background:#234ac4}.small-dot{background:#d89a30}.stat-icon.green{background:#edf1fc;color:#3354af}.stat-icon.blue{background:#eef0f6;color:#556998}.stat-icon.orange{background:#fbf0df;color:#92631c}.trace-callout{background:#eef1fa;border-color:#dce3f5}.trace-callout strong{color:#2b427e}.qr-tile{color:#23429d}.heart-icon{background:#fbf0df;color:#916121}.demo-pill{background:#fbf1dc;color:#806020;border-color:#ead9b5}.journey-summary strong,.sidebar nav a.active{color:#23429d}.round-icon{color:#234ac4}.meal-footer>span svg,.journey-footer>svg{color:#546ca5}.avatar{color:#3e5185}.photo-tag{color:#344978}.dish-list>div{color:var(--muted)}.confirmed-text{color:#405a9d}.pending-text{color:#88632c}
 [data-theme=dark] .brand-symbol,[data-theme=dark] .primary{background:#355bc5;color:white}[data-theme=dark] .journey-summary strong,[data-theme=dark] .round-icon,[data-theme=dark] .sidebar nav a.active{color:#b5c8ff}[data-theme=dark] .trace-callout{background:#202d4c;border-color:#354568}[data-theme=dark] .trace-callout strong{color:#cbd7fa}[data-theme=dark] .qr-tile{background:#dfe6fa;color:#23429d}[data-theme=dark] .avatar{background:#dfe6fa;color:#334876}[data-theme=dark] .demo-pill{background:#3b3020;color:#f1d39b;border-color:#6c5837}[data-theme=dark] .confirmed-text{color:#b7caff}
 @media(max-width:760px){.school-hero{min-height:210px;background-image:linear-gradient(90deg,rgba(19,39,99,.97),rgba(20,38,83,.66)),url('/images/canteen/view-8.jpg');background-position:center,center}.hero-content{padding:24px 22px}}
 
 /* Sidebar hierarchy: a solid selected row and clearer, coloured headings. */
 :root{
-  --sidebar-background:#e3ecfc;
-  --sidebar-surface:#f2f6fe;
-  --sidebar-border:#c8d7f3;
-  --sidebar-hover:#d6e2fa;
-  --sidebar-active:#234ac4;
-  --sidebar-active-hover:#18368f;
-  --sidebar-heading:#23429d;
-  --sidebar-active-shadow:0 8px 20px #234ac426;
+  --sidebar-background:#0755c2;
+  --sidebar-surface:#0649a6;
+  --sidebar-border:#ffffff30;
+  --sidebar-hover:#ffffff16;
+  --sidebar-active:#fff;
+  --sidebar-active-hover:#f5f8ff;
+  --sidebar-heading:#ffe179;
+  --sidebar-foreground:#fff;
+  --sidebar-muted:#eaf1ff;
+  --sidebar-active-foreground:#075dcc;
+  --sidebar-active-shadow:0 9px 22px #063b9929;
 }
 :root[data-theme=dark]{
-  --sidebar-background:#151d2d;
-  --sidebar-surface:#1e293d;
-  --sidebar-border:#33405a;
-  --sidebar-hover:#25334c;
-  --sidebar-active:#355bc5;
-  --sidebar-active-hover:#426bd9;
-  --sidebar-heading:#b5c8ff;
+  --sidebar-background:#0b327b;
+  --sidebar-surface:#ffffff12;
+  --sidebar-border:#ffffff20;
+  --sidebar-hover:#ffffff14;
+  --sidebar-active:#f4f7ff;
+  --sidebar-active-hover:#fff;
+  --sidebar-heading:#ffd867;
+  --sidebar-foreground:#f5f8ff;
+  --sidebar-muted:#c5d7fa;
+  --sidebar-active-foreground:#0649a6;
   --sidebar-active-shadow:0 8px 22px #00000038;
 }
 .sidebar{
   background:var(--sidebar-background);
   border-right-color:var(--sidebar-border);
+  color:var(--sidebar-foreground);
 }
 .sidebar .workspace,
 .sidebar .trust-note{
@@ -131,13 +139,13 @@
   font-weight:760;
 }
 .workspace>div{
-  color:var(--sidebar-heading);
+  color:var(--sidebar-foreground);
   font-size:14px;
   font-weight:700;
   line-height:1.35;
 }
 .workspace small{
-  color:var(--muted);
+  color:var(--sidebar-muted);
   font-weight:700;
 }
 .nav-label{
@@ -146,36 +154,42 @@
   font-weight:750;
 }
 .sidebar nav a{
+  color:var(--sidebar-foreground);
   font-size:14px;
   font-weight:700;
 }
 .sidebar nav a.active,
 [data-theme=dark] .sidebar nav a.active{
   background:var(--sidebar-active);
-  color:#fff;
+  color:var(--sidebar-active-foreground);
   font-weight:700;
   box-shadow:var(--sidebar-active-shadow);
 }
 .sidebar nav a.active:hover,
 [data-theme=dark] .sidebar nav a.active:hover{
   background:var(--sidebar-active-hover);
-  color:#fff;
+  color:var(--sidebar-active-foreground);
 }
 .trust-note strong{
-  color:var(--sidebar-heading);
+  color:var(--sidebar-foreground);
   font-size:15px;
   font-weight:720;
 }
 .sidebar-link{
-  color:var(--sidebar-heading);
+  color:var(--sidebar-foreground);
   font-size:14px;
   font-weight:700;
 }
 .profile>span:nth-child(2){
-  color:var(--sidebar-heading);
+  color:var(--sidebar-foreground);
   font-weight:700;
 }
-.profile small{font-weight:700}
+.profile small{color:var(--sidebar-muted);font-weight:700}
+.sidebar .brand small,.sidebar .trust-note p{color:var(--sidebar-muted)}
+.sidebar .brand-symbol{background:#fff;color:var(--primary);box-shadow:0 7px 18px #053a942e}
+.sidebar .workspace-icon,.sidebar .trust-note>span{color:var(--sidebar-heading)}
+.sidebar .trust-note button{color:#fff}
+.sidebar .small-dot,.sidebar .nav-dot{background:var(--sidebar-heading)}
 @media(max-width:760px){
   .sidebar.open .brand{font-size:22px}
   .sidebar.open nav a{font-size:17px}
@@ -334,6 +348,9 @@
 }
 @media(prefers-reduced-motion:reduce){.document-card{transition:none}}
 
+/* The operational menu can be longer than the public menu; keep every role route reachable on short screens. */
+.sidebar{overflow-y:auto;overscroll-behavior:contain}
+
 .feedback-photo-field{min-width:0;margin:20px 0;padding:0;border:0}
 .feedback-photo-field legend{font-size:17px;font-weight:700}
 .feedback-photo-field legend span{margin-left:6px;color:var(--muted);font-size:12px;font-weight:600}
@@ -360,6 +377,7 @@ form .feedback-photo-picker.disabled{cursor:not-allowed;opacity:.6}
 .timeline-photos{display:flex;gap:9px;flex-wrap:wrap;margin-top:12px}
 .timeline-photos img{width:112px;height:84px;object-fit:cover;border:1px solid var(--border);border-radius:11px;background:var(--surface-alt)}
 .timeline-photo-state{display:inline-flex;margin-top:10px!important;padding:6px 9px;border:1px dashed var(--border);border-radius:8px;background:var(--surface-alt);font-size:10px!important}
+.timeline-photo-state.internal{align-items:center;gap:5px;border-style:solid;border-color:color-mix(in srgb,var(--warning) 32%,var(--border));background:var(--warning-soft);color:var(--warning)!important;font-weight:650}
 @media(max-width:760px){.timeline-photos img{width:96px;height:72px}}
 
 /* Parent weekly menu: show the complete week before the selected-day detail. */
@@ -420,3 +438,42 @@ form .feedback-photo-picker.disabled{cursor:not-allowed;opacity:.6}
   .weekly-menu-day footer>span{white-space:normal}
 }
 @media(prefers-reduced-motion:reduce){.weekly-menu-day{transition:none}}
+
+/* Give the main content hierarchy a distinct brand colour without colouring
+   dense operational labels or body copy. */
+.page-heading h1,
+.mobile-greeting h2,
+.card-header h2,
+.weekly-menu-header h2,
+.gallery-heading h2,
+.inventory-section-heading h2{
+  color:var(--heading);
+}
+.section-kicker,
+.eyebrow,
+.mobile-greeting>div>span{
+  color:var(--primary);
+}
+
+/* Shared role theme: parents, schools, kitchens, suppliers and ward
+   supervision all inherit the same cobalt/ivory visual hierarchy. */
+.topbar{background:color-mix(in srgb,var(--surface) 94%,var(--canvas));border-bottom-color:var(--border)}
+.primary:hover{background:var(--primary-hover);filter:none}
+.segmented{border:1px solid var(--border);background:var(--surface);box-shadow:0 2px 10px #17376908}
+.segmented a.selected{background:var(--primary);color:#fff;box-shadow:0 5px 14px color-mix(in srgb,var(--primary) 22%,transparent)}
+.segmented a.selected:hover{background:var(--primary-hover)}
+.card{border-color:var(--border);box-shadow:var(--shadow)}
+.trace-callout{border-color:color-mix(in srgb,var(--primary) 15%,var(--border));background:var(--primary-soft)}
+.trace-callout strong,.qr-tile,.journey-summary strong,.round-icon{color:var(--primary)}
+.journey-summary,.timeline-node.done,.source-icon,.transport-icon,.document-group-heading>span{background:var(--primary-soft)}
+.badge:not(.amber),.admin-status,.sync-status.synced{background:var(--success-soft);color:var(--success)}
+.badge.amber,.sync-status.pending{background:var(--warning-soft);color:var(--warning)}
+.sync-status.missing{background:var(--danger-soft);color:var(--danger)}
+.demo-pill{border-color:color-mix(in srgb,var(--accent) 38%,var(--border));background:var(--accent-soft);color:#765300}
+.notification-button i{background:var(--accent)}
+.week-picker button.chosen{background:var(--primary)}
+.week-picker button.chosen small{color:#e7efff}
+[data-theme=dark] .segmented{background:var(--surface-alt)}
+[data-theme=dark] .segmented a.selected{background:#355fc9;color:#fff}
+[data-theme=dark] .demo-pill{color:#f4d586}
+.route-content{animation:route-content-enter .18s ease-out}@keyframes route-content-enter{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}

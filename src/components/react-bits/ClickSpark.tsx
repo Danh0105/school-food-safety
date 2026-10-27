@@ -1,6 +1,6 @@
 'use client';
 
-import { forwardRef, useEffect, useImperativeHandle, useRef, type CSSProperties, type ReactNode } from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, type CSSProperties, type ReactNode } from 'react';
 
 export type ClickSparkShape = 'line' | 'streak' | 'dot' | 'star';
 
@@ -162,7 +162,7 @@ const ClickSpark = forwardRef<ClickSparkHandle, ClickSparkProps>(
     const rootRef = useRef<HTMLDivElement>(null);
     const layerRef = useRef<HTMLSpanElement>(null);
     const engineRef = useRef<ClickSparkHandle | null>(null);
-    const settings: Settings = {
+    const settings: Settings = useMemo(() => ({
       colors: toColors(sparkColor),
       size: Math.max(0, sparkSize),
       radius: Math.max(0, sparkRadius) * Math.max(0, extraScale),
@@ -178,9 +178,12 @@ const ClickSpark = forwardRef<ClickSparkHandle, ClickSparkProps>(
       glow: clamp(glow, 0, 1),
       ring,
       disabled
-    };
+    }), [direction, disabled, duration, easing, extraScale, glow, gravity, randomness, ring, shape, sparkColor, sparkCount, sparkRadius, sparkSize, sparkWidth, spread]);
     const settingsRef = useRef(settings);
-    settingsRef.current = settings;
+
+    useEffect(() => {
+      settingsRef.current = settings;
+    }, [settings]);
 
     useEffect(() => {
       const root = rootRef.current;

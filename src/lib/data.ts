@@ -1,3 +1,5 @@
+import { canViewUnconfirmedMealPhotos } from '../../packages/domain/policy'
+import type { Actor, MealPhotoScope } from '../../packages/domain/policy'
 export type School = { id: string; name: string; address: string; mode: 'ON_SITE' | 'CENTRAL_KITCHEN' }
 export type MealEvent = {
   status: string
@@ -5,7 +7,7 @@ export type MealEvent = {
   time: string
   actor: string
   confirmed: boolean
-  /** Only photos confirmed by the school board are exposed to the parent view. */
+  /** Ảnh hiển thị cho người xem: phụ huynh chỉ nhận ảnh BGH đã xác nhận; vai trò nội bộ đúng phạm vi nhận cả ảnh chờ xác nhận (xem `confirmed`). */
   photos: string[]
   hasReportedPhotos: boolean
 }
@@ -70,12 +72,23 @@ export type PublicTraceLot = {
 export type FeedbackAttachment = { id: string; name: string; mimeType: 'image/jpeg'; size: number; dataUrl: string }
 export type Feedback = { id: string; schoolId: string; kind: string; content: string; status: string; createdAt: string; attachments: FeedbackAttachment[] }
 export const demo = true
+/** Phạm vi DEMO của bữa ăn theo trường; cùng quy ước mã bếp và địa bàn với QR suất ăn và kho. */
+export const mealScope = (school: School): MealPhotoScope => ({ schoolId: school.id, wardId: 'ward-binh-hung-hoa', kitchenId: school.mode === 'CENTRAL_KITCHEN' ? 'kitchen-an-tam' : `kitchen-${school.id}` })
+/** Danh tính DEMO của vai trò đang xem trường đã chọn; chỉ mô phỏng phạm vi, không phải xác thực. */
+export const demoMealViewer = (role: Actor['role'], school: School): Actor => ({
+  id: `${role}.demo-user`, role,
+  schoolId: ['school_board', 'school_receiver', 'meal_service_staff', 'school_kitchen'].includes(role) ? school.id : null,
+  kitchenId: role === 'central_kitchen' ? 'kitchen-an-tam' : role === 'school_kitchen' ? mealScope(school).kitchenId : null,
+  wardId: role === 'parent' ? null : mealScope(school).wardId,
+})
 export const schools: School[] = [
   { id: 'an-phu', name: 'Tiểu học An Phú', address: 'Phường Bình Hưng Hoà · Thành phố Hồ Chí Minh', mode: 'CENTRAL_KITCHEN' },
   { id: 'binh-an', name: 'Mầm non Bình An', address: 'Phường Bình Hưng Hoà · Thành phố Hồ Chí Minh', mode: 'ON_SITE' },
   { id: 'an-khanh', name: 'THCS An Khánh', address: 'Phường Bình Hưng Hoà · Thành phố Hồ Chí Minh', mode: 'ON_SITE' },
 ]
 export const foodPhoto = '/meal-demo.jpg'
+/** Ảnh DEMO do người dùng cung cấp, chỉ gắn với mốc READY. */
+export const readyMealPhoto = '/meal-ready-demo.webp'
 export const publicTraceLots: PublicTraceLot[] = [
   {
     id:'rice-demo-01',ingredient:'Gạo thơm',supplier:'HTX Nông nghiệp An Phú',lotCode:'DEMO-GAO-1810',origin:'Vùng nguyên liệu minh họa · Đồng bằng sông Cửu Long',producedAt:'2026-09-28',expiresAt:'2027-03-28',receivedAt:'2026-10-17T06:35:00+07:00',receivingSummary:'Bao bì nguyên vẹn; số lượng giao nhận đã được ghi nhận trong phiếu DEMO.',linkedDish:'Cơm trắng',documents:[
@@ -103,6 +116,8 @@ export const publicTraceLots: PublicTraceLot[] = [
   },
 ]
 const dishes = [ ['Cơm trắng', 'Gà kho gừng', 'Canh bí đỏ thịt bằm', 'Rau cải xào', 'Thanh long'], ['Cơm trắng', 'Thịt heo kho trứng', 'Canh rau ngót', 'Bông cải luộc', 'Chuối chín'], ['Cơm trắng', 'Cá sốt cà chua', 'Canh củ quả', 'Rau muống xào', 'Dưa hấu'] ]
+/** Thực đơn DEMO mặc định theo thứ trong tuần khi trường chưa lưu bản nháp; dùng chung cho mọi chế độ xem. */
+export const plannedDishes = (date: string): string[] => [...dishes[new Date(`${date}T12:00:00`).getDay() % 3]!]
 type DishEstimate = Omit<DishDetail, 'name' | 'verification'>
 const dishEstimates: Record<string, DishEstimate> = {
   'Cơm trắng': { servingWeightGrams: 150, ingredients: [{ name: 'Gạo tẻ', amount: 65, unit: 'g' }, { name: 'Nước', amount: 85, unit: 'ml' }], nutrition: { energyKcal: 195, proteinGrams: 4, carbohydrateGrams: 43, fatGrams: 0.5 } },
@@ -205,18 +220,20 @@ function readFeedback(): Feedback[] {
 export const demoData = {
   reply: (id:string):string => {try{return (JSON.parse(localStorage.getItem('demo-replies')??'{}') as Record<string,string>)[id]??''}catch{return ''}},
   schools: async (): Promise<School[]> => (await pause(), schools),
-  day: async (school: School, date: string): Promise<DayData> => {
+  /** Không truyền `viewer` (hoặc phụ huynh): chỉ trả ảnh đã được BGH xác nhận. */
+  day: async (school: School, date: string, viewer?: Actor): Promise<DayData> => {
     await pause()
-    const stored = JSON.parse(localStorage.getItem('demo-admin-meals') ?? '[]') as {schoolId:string;date:string;servings:number;dishes:string[];portions?:Record<string,number>;events:{status:string;time:string;confirmed:boolean;photos?:unknown}[]}[]
+    const showUnconfirmedPhotos = viewer ? canViewUnconfirmedMealPhotos(viewer, mealScope(school)) : false
+    const stored = JSON.parse(localStorage.getItem('demo-admin-meals') ?? '[]') as {schoolId:string;date:string;servings:number;dishes:string[];portions?:Record<string,number>;events:{status:string;time:string;confirmed:boolean;photos?:unknown;actorLabel?:unknown}[]}[]
     const saved = stored.find(m => m.schoolId===school.id && m.date===date)
     const central = school.mode === 'CENTRAL_KITCHEN'
-    const selectedDishes = saved?.dishes ?? dishes[new Date(`${date}T12:00:00`).getDay() % 3]!
+    const selectedDishes = saved?.dishes ?? plannedDishes(date)
     const events: MealEvent[] = saved ? saved.events.map(e=>{
-      const reportedPhotos=Array.isArray(e.photos) ? e.photos.filter((photo):photo is string=>typeof photo==='string'&&photo.startsWith('data:image/')) : []
-      return {status:e.status,label:({DISPATCHED:'Xuất bếp',ARRIVED:'Đến trường',PLATED:'Ra món',READY:'Sẵn sàng phục vụ'} as Record<string,string>)[e.status] ?? e.status,time:e.time,actor:'Người thao tác DEMO',confirmed:e.confirmed,photos:e.confirmed?reportedPhotos:[],hasReportedPhotos:reportedPhotos.length>0}
+      const reportedPhotos=e.status==='READY'&&Array.isArray(e.photos) ? e.photos.filter((photo):photo is string=>typeof photo==='string'&&photo.startsWith('data:image/')) : []
+      return {status:e.status,label:({DISPATCHED:'Xuất bếp',ARRIVED:'Đến trường',PLATED:'Ra món',READY:'Sẵn sàng phục vụ'} as Record<string,string>)[e.status] ?? e.status,time:e.time,actor:typeof e.actorLabel==='string'?e.actorLabel:'Người thao tác DEMO',confirmed:e.confirmed,photos:e.confirmed||showUnconfirmedPhotos?reportedPhotos:[],hasReportedPhotos:reportedPhotos.length>0}
     }) : [
       ...(central ? [{ status: 'DISPATCHED', label: 'Xuất bếp', time: '09:30', actor: 'Bếp trung tâm An Tâm', confirmed: true, photos: [], hasReportedPhotos: false }, { status: 'ARRIVED', label: 'Đến trường', time: '10:00', actor: 'Nhân viên tiếp nhận', confirmed: true, photos: [], hasReportedPhotos: false }] : []),
-      { status: 'PLATED', label: 'Ra món', time: '10:20', actor: 'Nhân viên bếp', confirmed: true, photos: [], hasReportedPhotos: false }, { status: 'READY', label: 'Sẵn sàng phục vụ', time: '10:45', actor: 'Nhân viên bếp', confirmed: false, photos: [], hasReportedPhotos: false },
+      { status: 'PLATED', label: 'Ra món', time: '10:20', actor: 'Nhân viên bếp', confirmed: true, photos: [], hasReportedPhotos: false }, { status: 'READY', label: 'Sẵn sàng phục vụ', time: '10:45', actor: 'Nhân viên bếp', confirmed: true, photos: [readyMealPhoto], hasReportedPhotos: true },
     ]
     const dispatchedAt=events.find(event=>event.status==='DISPATCHED')?.time
     const arrivedAt=events.find(event=>event.status==='ARRIVED')?.time

@@ -1,5 +1,44 @@
 ﻿# Báo cáo QA frontend
 
+## Cập nhật 26/10/2026 — xác nhận phạm vi frontend và tối ưu tải trang
+
+- Giữ đúng phạm vi frontend-only: không thêm API, backend, database, migration hoặc xác thực thật; form và thao tác tiếp tục lưu DEMO trên trình duyệt.
+- Tách tải theo nhu cầu cho form phản ánh, thực đơn tuần, gallery, trang truy xuất QR và module quản trị. Bundle chính giảm từ khoảng 693 KB xuống 387 KB trước gzip; build không còn cảnh báo chunk vượt 500 KB.
+- Thay animation số liệu phụ thuộc Motion bằng phiên bản `requestAnimationFrame` nhỏ gọn, vẫn tôn trọng `prefers-reduced-motion` và giữ định dạng số hiện tại.
+- Sửa toàn bộ 4 cảnh báo React về ref trong render, state đồng bộ trong effect và thời gian không thuần khi render.
+- `npm run lint`: đạt, 0 lỗi/0 cảnh báo.
+- `npm run build`: đạt.
+- `npm test`: 22/22 đạt.
+- `npm run test:e2e`: 34/34 đạt, bao gồm popup phản ánh lazy-load, responsive, dark mode, axe, vai trò DEMO, thực đơn, QR, kho và nhà cung cấp.
+
+## Cập nhật 24/10/2026 — quản lý kho và nhà cung cấp
+
+- Thêm trang **Nhà cung cấp** với 6 bản ghi DEMO, KPI công nợ, lọc, phân trang, CRUD, xác nhận xóa, import JSON và export CSV. Chỉnh sửa giữ nguyên vị trí dòng; dữ liệu lưu localStorage.
+- Thêm trang **Quản lý kho** gồm 7 tab và tab phụ Serial: 31 mặt hàng, 16 lô, cảnh báo dưới định mức/hết hạn, KPI, biểu đồ, tồn kho, phiếu nhập/xuất/chuyển và truy xuất lô.
+- BGH, bếp trung tâm và bếp tại trường có thao tác frontend; Phòng VH–XH chỉ đọc; vai trò ngoài phạm vi nhận trạng thái không có quyền nếu truy cập URL trực tiếp.
+- Visual QA đạt ở desktop 1440px và mobile 390px; bảng rộng cuộn trong vùng bảng, toàn trang không tràn ngang. Ảnh: `suppliers-ward-readonly-1440.png`, `suppliers-mobile-390.png`, `warehouse-trace-desktop.png`, `warehouse-trace-mobile.png`.
+- `npm run build`: đạt; còn cảnh báo bundle chính trên 500 kB. `npm run lint`: đạt, còn 4 cảnh báo React hiện hữu.
+- `npm test`: 19/19 đạt. `npm run test:e2e`: 31/31 đạt; bài mới kiểm tra CRUD nhà cung cấp, phân quyền chỉ đọc, 7 tab kho, tạo phiếu nhập, serial, truy xuất, axe và responsive.
+- Không có API, migration hoặc database thay đổi; toàn bộ là frontend DEMO và không dùng cho dữ liệu thật.
+
+## Cập nhật 24/10/2026 — ảnh chỉ tại mốc Sẵn sàng phục vụ
+
+- Quy tắc domain và UI đã đổi đồng bộ: `DISPATCHED`, `ARRIVED`, `PLATED` không yêu cầu/không nhận ảnh; `READY` bắt buộc ít nhất một ảnh hợp lệ.
+- Ảnh bữa ăn do người dùng cung cấp được tối ưu thành `public/meal-ready-demo.webp`, gắn duy nhất với `READY` trong dữ liệu DEMO và chỉ công khai sau xác nhận BGH trong luồng thao tác.
+- Các không gian Bếp trung tâm, Tiếp nhận tại trường, Nhân viên ra món/Bếp trường, BGH, Phòng VH–XH và Phụ huynh dùng chung quy tắc; dữ liệu localStorage cũ được loại ảnh khỏi các mốc trước khi đọc.
+- `npm run build`: đạt; Vite còn cảnh báo bundle chính trên 500 kB.
+- `npm test`: 19/19 đạt.
+- `npm run test:e2e`: 28/28 đạt, gồm kiểm tra các mốc trước không có input ảnh, `READY` có ảnh, BGH xác nhận và phụ huynh xem ảnh.
+- `npm run lint`: đạt, còn 4 cảnh báo React hiện hữu; không có lỗi lint.
+- Visual QA: ảnh chỉ xuất hiện ở mốc cuối trong `docs/screenshots/meal-progress-roles-1280.png`, bản phụ huynh ở `docs/screenshots/home-390.png`; không ghi nhận tràn ngang hoặc lỗi tương phản tự động trong các bài axe hiện có.
+
+## Cập nhật 24/10/2026 — CTA tiến trình theo vai trò
+
+- Thêm CTA tại tổng quan cho bốn vai trò tác nghiệp: Bếp trung tâm, Nhân viên tiếp nhận tại trường, Nhân viên ra món và Bếp nấu tại trường; liên kết thật tới `/van-hanh`.
+- BGH dùng nhãn **Xem & xác nhận tiến trình**; Phòng VH–XH dùng nhãn chỉ đọc **Xem tiến trình suất ăn**; phụ huynh không có CTA này.
+- Build đạt; lint không có lỗi và còn 4 cảnh báo React hiện hữu.
+- Playwright theo quyền và điều hướng 6 vai trò đạt; kiểm tra responsive/axe tổng quan Phòng VH–XH đạt trên desktop và 390px.
+
 Ngày: 17/10/2026. Phạm vi: frontend minh họa, không backend.
 
 ## Kết quả
@@ -11,7 +50,7 @@ Ngày: 17/10/2026. Phạm vi: frontend minh họa, không backend.
 - Ảnh chụp: `docs/screenshots/home-*.png`, `dark-mobile.png`, `ward-desktop.png`, `ward-mobile.png`.
 
 ## Luồng đã kiểm tra
-Chọn trường; xem lịch tuần và đổi ngày; tab nguồn gốc/giám sát; drawer di động; dark mode; gửi góp ý và lưu lại sau reload; đổi không gian BGH/bếp/VH–XH; chỉnh thực đơn và số suất phản ánh lại ở view phụ huynh; xuất bếp có ảnh minh họa; bếp không có nút nhận hàng hộ trường; tải CSV theo chế độ xem.
+Chọn trường; xem lịch tuần và đổi ngày; tab nguồn gốc/giám sát; drawer di động; dark mode; gửi góp ý và lưu lại sau reload; đổi không gian BGH/bếp/VH–XH; chỉnh thực đơn và số suất phản ánh lại ở view phụ huynh; xuất bếp không ảnh; ảnh tại mốc Sẵn sàng phục vụ; bếp không có nút nhận hàng hộ trường; tải CSV theo chế độ xem.
 
 ## Files chính
 `src/App.tsx`, `src/Admin.tsx`, `src/lib/data.ts`, `src/lib/store.ts`, `src/index.css`, `src/App.css`, `src/Admin.css`, `packages/domain/policy.ts`, `packages/domain/policy.test.ts`, `tests/*.spec.ts`, `playwright.config.ts`, `vite.config.ts`, `package.json`, `package-lock.json`, `public/meal-demo.jpg`, `public/favicon.svg`, `index.html`, `README.md`, `IMPLEMENTATION_PLAN.md`.
