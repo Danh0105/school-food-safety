@@ -11,7 +11,6 @@ import type { MealType, PortionQrEvent, PortionQrRecord, PortionQrScope } from '
 export type DemoPortionQr = PortionQrRecord & {
   schoolName: string
   kitchenName: string
-  dishNames: string[]
   demo: true
 }
 
@@ -32,14 +31,13 @@ type PortionQrDatabase = {
 export type PortionQrIssueInput = {
   actor: Actor
   scope: PortionQrScope
-  quantity: number
   idempotencyKey: string
   schoolName: string
   kitchenName: string
   dishNames: string[]
 }
 
-const storageKey = 'demo-portion-qr-v1'
+const storageKey = 'demo-dish-qr-v2'
 const updateEventName = 'demo-portion-qr-updated'
 const emptyDatabase = (): PortionQrDatabase => ({records:[],events:[],batches:[]})
 
@@ -110,16 +108,17 @@ export const portionQrDemo = {
   },
 
   issue(input:PortionQrIssueInput) {
-    assertCanIssuePortionQr(input.actor,input.scope,input.quantity)
+    const dishNames=[...new Set(input.dishNames.map(name=>name.trim()).filter(Boolean))]
+    assertCanIssuePortionQr(input.actor,input.scope,dishNames.length)
     const database=readDatabase()
     const serviceKey=portionServiceKey(input.scope)
     const replay=database.batches.find(batch=>batch.serviceKey===serviceKey&&batch.idempotencyKey===input.idempotencyKey)
     if(replay) return database.records.filter(record=>record.batchId===replay.id)
     const existing=activePortionQrs(database.records.filter(record=>belongsToScope(record,input.scope)),database.events)
     if(existing.length) throw new Error('ACTIVE_BATCH_EXISTS')
-    const batch:IssueBatch={id:crypto.randomUUID(),serviceKey,idempotencyKey:input.idempotencyKey,quantity:input.quantity,createdAt:new Date().toISOString()}
+    const batch:IssueBatch={id:crypto.randomUUID(),serviceKey,idempotencyKey:input.idempotencyKey,quantity:dishNames.length,createdAt:new Date().toISOString()}
     const usedTokens=new Set(database.records.map(record=>record.publicToken))
-    const records=Array.from({length:input.quantity},(_,index):DemoPortionQr=>{
+    const records=dishNames.map((dishName,index):DemoPortionQr=>{
       let publicToken=opaqueToken()
       while(usedTokens.has(publicToken)) publicToken=opaqueToken()
       usedTokens.add(publicToken)
@@ -127,13 +126,13 @@ export const portionQrDemo = {
         ...input.scope,
         id:crypto.randomUUID(),
         publicToken,
+        dishName,
         sequence:index+1,
         batchId:batch.id,
         issuedAt:batch.createdAt,
         issuedBy:input.actor.id,
         schoolName:input.schoolName,
         kitchenName:input.kitchenName,
-        dishNames:[...input.dishNames],
         demo:true,
       }
     })
@@ -152,6 +151,26 @@ export const portionQrDemo = {
   active(scope:PortionQrScope) {
     const database=readDatabase()
     return activePortionQrs(database.records.filter(record=>belongsToScope(record,scope)),database.events) as DemoPortionQr[]
+  },
+
+  /**
+   * Seed phát hành sẵn dành riêng cho bữa ăn minh họa mặc định. Đây là bước
+   * bootstrap dữ liệu DEMO, không phải quyền phát hành của người đang xem.
+   * Nếu lô từng tồn tại (kể cả đã thu hồi), không tự phát hành lại.
+   */
+  seedPublishedDemo(input:{scope:PortionQrScope;schoolName:string;kitchenName:string;dishNames:string[]}) {
+    if(input.scope.schoolId!=='an-phu'||input.scope.serviceDate!=='2026-10-17'||!['BREAKFAST','LUNCH'].includes(input.scope.mealType)||input.scope.serviceMode!=='CENTRAL_KITCHEN'||!input.dishNames.length) return [] as DemoPortionQr[]
+    const database=readDatabase()
+    const scoped=database.records.filter(record=>belongsToScope(record,input.scope))
+    if(scoped.length) return activePortionQrs(scoped,database.events) as DemoPortionQr[]
+    return this.issue({
+      actor:this.actorFor('central_kitchen',input.scope),
+      scope:input.scope,
+      idempotencyKey:`demo-published-seed-an-phu-2026-10-17-${input.scope.mealType.toLocaleLowerCase('vi-VN')}-dish-v2`,
+      schoolName:input.schoolName,
+      kitchenName:input.kitchenName,
+      dishNames:input.dishNames,
+    })
   },
 
   revokeActive(actor:Actor,scope:PortionQrScope,reason:string) {

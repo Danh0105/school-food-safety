@@ -68,6 +68,6 @@ test('HRM navigation is scoped to central kitchen and remains responsive on mobi
   await switchWorkspace(page, 'Ban Giám hiệu')
   await expect(page.getByRole('link', { name: 'Nhân sự & phân ca', exact: true })).toHaveCount(0)
   await page.evaluate(() => { history.pushState({}, '', '/nhan-su-bep'); window.dispatchEvent(new PopStateEvent('popstate')) })
-  await expect(page.getByRole('heading', { name: 'Không có quyền truy cập' })).toBeVisible()
-  await expect(page.getByText('Phân hệ nhân sự và phân ca chỉ dành cho tài khoản Bếp trung tâm.')).toBeVisible()
+  await expect(page).toHaveURL(/\/$/)
+  await expect(page.getByRole('link', { name: 'Nhân sự & phân ca', exact: true })).toHaveCount(0)
 })

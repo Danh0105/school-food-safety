@@ -1,6 +1,7 @@
 import readyServingDemo from "./assets/ready-service-demo.jpg";
 import supervisionCheckDemo from "./assets/supervision-check-demo.svg";
 import supervisionSampleDemo from "./assets/supervision-sample-demo.svg";
+import breakfastDemo from "./assets/dishes/porridge.svg";
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import {
@@ -22,9 +23,7 @@ import {
   Apple,
   ArrowRight,
   Bell,
-  Boxes,
   Building2,
-  CalendarClock,
   CalendarDays,
   CheckCheck,
   CheckCircle2,
@@ -60,7 +59,7 @@ import {
 import type { LucideIcon } from "lucide-react";
 import { demoData, demo, schools as demoSchools } from "./lib/data";
 import type { DayData, PublicInspection, School } from "./lib/data";
-import { useUI } from "./lib/store";
+import { centralKitchenRouteAccess, useUI } from "./lib/store";
 import type { ViewRole } from "./lib/store";
 import "./App.css";
 import MobileNavigation from "./MobileNavigation";
@@ -70,11 +69,15 @@ import SpotlightCard from "./components/react-bits/SpotlightCard";
 import ClickSpark from "./components/react-bits/ClickSpark";
 import { MealJourneyPanel, MealJourneyProgress } from "./MealJourney";
 import KitchenLegalDocuments from "./KitchenLegalDocuments";
+import SupervisionStatusPanel from "./SupervisionStatusPanel";
+import SupervisionJourneyActions from "./SupervisionJourneyActions";
+import { SUPERVISION_JOURNEY_EVENT } from "./lib/supervisionJourney";
 import { compactDateLabel, weekDates, weekdayLabel } from "./lib/dates";
 import IngredientTraceDialog from "./IngredientTraceDialog";
 import type { IngredientPortion } from "./lib/data";
 import { BOARDING_MENU_STORAGE_KEY } from "./lib/boardingMenu";
 import type { BoardingMealType } from "./lib/boardingMenu";
+import { portionQrDemo } from "./lib/portionQr";
 import "./components/react-bits/integration.css";
 
 const AdminPanel = lazy(() => import("./Admin"));
@@ -108,12 +111,9 @@ const adminNavigation = [
     label: "Hồ sơ pháp lý & điều kiện bếp",
     icon: FileCheck2,
   },
-  { path: "/van-hanh", label: "Tiến trình suất ăn", icon: Activity },
-  { path: "/nhan-su-bep", label: "Nhân sự & phân ca", icon: CalendarClock },
-  { path: "/ma-qr-suat-an", label: "QR từng suất ăn", icon: QrCode },
+  { path: "/ma-qr-suat-an", label: "QR từng món ăn", icon: QrCode },
   { path: "/quan-ly-kho", label: "Quản lý kho", icon: Warehouse },
   { path: "/nha-cung-cap", label: "Nhà cung cấp", icon: Building2 },
-  { path: "/xuat-nhap-ton", label: "Xuất nhập tồn", icon: Boxes },
   { path: "/phan-anh", label: "Phản ánh & góp ý", icon: MessageSquareText },
   { path: "/bao-cao", label: "Báo cáo tổng hợp", icon: CalendarDays },
 ];
@@ -340,7 +340,6 @@ function MealDayDetail({
   school,
   date,
   data,
-  journeyData,
   mealType,
   weekView,
   journeyPath,
@@ -351,7 +350,6 @@ function MealDayDetail({
   school: School;
   date: string;
   data: DayData;
-  journeyData: DayData;
   mealType: BoardingMealType;
   weekView: boolean;
   journeyPath: string;
@@ -362,13 +360,8 @@ function MealDayDetail({
   const mealOption =
     parentMealOptions.find((option) => option.value === mealType) ??
     parentMealOptions[1]!;
-  const readyEvent = journeyData.events.find(
-    (event) => event.status === "READY",
-  );
-  const readyPhoto =
-    mealType === "LUNCH" && readyEvent?.confirmed
-      ? readyEvent.photos[0]
-      : undefined;
+  const readyEvent = data.events.find((event) => event.status === "READY");
+  const readyPhoto = readyEvent?.confirmed ? readyEvent.photos[0] : undefined;
   return (
     <div className="content-grid" id="selected-day-detail">
       <section className="card meal-card">
@@ -509,17 +502,17 @@ function MealDayDetail({
         <div className="card-header">
           <div>
             <div className="section-kicker">MINH BẠCH TỪ BẾP ĐẾN TRƯỜNG</div>
-            <h2>Hành trình bữa trưa</h2>
+            <h2>Hành trình {mealOption.pill.toLocaleLowerCase("vi-VN")}</h2>
           </div>
           <span className="round-icon">
             <Activity size={19} />
           </span>
         </div>
         <MealJourneyProgress
-          data={journeyData}
+          data={data}
+          mealType={mealType}
           mode={school.mode}
           onReadyPhotoClick={() => {
-            onMealTypeChange("LUNCH");
             onOpen("photo");
           }}
         />
@@ -532,9 +525,12 @@ function MealDayDetail({
 }
 function PublicInspectionCard({
   inspection,
+  mealType,
 }: {
   inspection: PublicInspection | null;
+  mealType: Extract<BoardingMealType, "BREAKFAST" | "LUNCH">;
 }) {
+  const mealLabel = mealType === "BREAKFAST" ? "bữa sáng" : "bữa trưa";
   const shortDate = (value: string) =>
     new Date(`${value}T12:00:00`).toLocaleDateString("vi-VN", {
       day: "2-digit",
@@ -547,13 +543,13 @@ function PublicInspectionCard({
         <div className="card-header">
           <div>
             <div className="section-kicker">KẾT QUẢ CÓ THẨM QUYỀN</div>
-            <h2>Kiểm tra công khai</h2>
+            <h2>Kiểm tra công khai · {mealLabel}</h2>
           </div>
           <ShieldCheck />
         </div>
         <div className="empty-state">
           <FileCheck2 size={38} />
-          <h3>Chưa có kết quả kiểm tra công khai</h3>
+          <h3>Chưa có kết quả kiểm tra công khai riêng cho {mealLabel}</h3>
           <p>
             Nhật ký vận hành do đơn vị báo cáo không thay thế kết quả kiểm tra
             của cơ quan có thẩm quyền.
@@ -562,8 +558,8 @@ function PublicInspectionCard({
         <div className="privacy">
           <CircleHelp size={20} />
           <p>
-            Thông tin kiểm thực ba bước và lưu mẫu chỉ hiển thị sau khi được phê
-            duyệt công khai.
+            Không dùng biên bản của bữa trưa để xác nhận cho bữa sáng. Hồ sơ
+            kiểm thực ba bước và lưu mẫu phải gắn với đúng bữa ăn.
           </p>
         </div>
       </section>
@@ -576,7 +572,7 @@ function PublicInspectionCard({
       <div className="card-header">
         <div>
           <div className="section-kicker">KẾT QUẢ CÓ THẨM QUYỀN</div>
-          <h2>Kiểm tra công khai</h2>
+          <h2>Kiểm tra công khai · {mealLabel}</h2>
         </div>
         <ShieldCheck />
       </div>
@@ -650,36 +646,59 @@ function PublicInspectionCard({
         <CircleHelp size={20} />
         <p>
           Đây là dữ liệu minh họa, không phải biên bản thật. Kết quả chỉ phản
-          ánh phạm vi và thời điểm kiểm tra được nêu.
+          ánh phạm vi và thời điểm kiểm tra được nêu, không tự động chứng minh
+          an toàn cho từng suất ăn.
         </p>
       </div>
     </section>
   );
 }
 /** Cùng một bản giám sát công khai cho đúng năm vai trò, không tách dữ liệu theo role. */
-function SupervisionSection({
+function SupervisionMealContent({
   school,
   date,
   data,
+  mealType,
+  role,
 }: {
   school: School;
   date: string;
   data: DayData;
+  role: ViewRole;
+  mealType: Extract<BoardingMealType, "BREAKFAST" | "LUNCH">;
 }) {
+  useEffect(() => {
+    if (!demo || school.mode !== "CENTRAL_KITCHEN" || !data.dishes.length) return;
+    try {
+      const scope = portionQrDemo.scopeForSchool({
+        schoolId: school.id,
+        serviceDate: date,
+        mealType,
+      });
+      portionQrDemo.seedPublishedDemo({
+        scope,
+        schoolName: school.name,
+        kitchenName: data.kitchen,
+        dishNames: data.dishes,
+      });
+    } catch {
+      // Empty state vẫn được giữ nếu trình duyệt không cho phép lưu DEMO.
+    }
+  }, [school, date, data, mealType]);
   const [photoPreview, setPhotoPreview] = useState<{
     url: string;
     title: string;
     description: string;
   } | null>(null);
   const readyEvent = data.events.find((event) => event.status === "READY");
-  const publishedPhoto = readyEvent?.confirmed
-    ? readyEvent.photos[0]
-    : undefined;
+  const publishedPhoto = readyEvent?.confirmed ? readyEvent.photos[0] : undefined;
+  const placeholderPhoto = mealType === "BREAKFAST" ? breakfastDemo : readyServingDemo;
+  const mealLabel = mealType === "BREAKFAST" ? "bữa sáng" : "bữa trưa";
   const monitoringImages = [
     {
       key: "ready",
-      url: publishedPhoto ?? readyServingDemo,
-      title: "Hình ảnh bữa ăn sẵn sàng phục vụ",
+      url: publishedPhoto ?? placeholderPhoto,
+      title: `Hình ảnh ${mealLabel} sẵn sàng phục vụ`,
       description: publishedPhoto
         ? "Ảnh do đơn vị ghi nhận và đã được công khai trong DEMO."
         : "Ảnh minh họa DEMO; chưa có ảnh thực tế được duyệt công khai.",
@@ -688,7 +707,7 @@ function SupervisionSection({
     {
       key: "inspection",
       url: supervisionCheckDemo,
-      title: "Kiểm thực ba bước",
+      title: `Kiểm thực ba bước · ${mealLabel}`,
       description:
         "Hình vẽ minh họa nghiệp vụ kiểm thực; xem hồ sơ bên dưới để biết tình trạng ghi nhận.",
       badge: "MINH HỌA QUY TRÌNH",
@@ -696,14 +715,20 @@ function SupervisionSection({
     {
       key: "sample",
       url: supervisionSampleDemo,
-      title: "Lưu mẫu thức ăn",
+      title: `Lưu mẫu thức ăn · ${mealLabel}`,
       description:
         "Hình vẽ minh họa lưu mẫu; không thay thế nhật ký, nhiệt độ hoặc thời hạn lưu mẫu.",
       badge: "MINH HỌA QUY TRÌNH",
     },
   ];
   return (
-    <div className="supervision-stack">
+    <>
+      <section className="supervision-meal-overview" aria-label={`Tổng quan giám sát ${mealLabel}`}>
+        <div><small>Suất dự kiến · {mealLabel}</small><strong>{data.servings.toLocaleString("vi-VN")}</strong></div>
+        <div><small>Món trong thực đơn</small><strong>{data.dishes.length.toLocaleString("vi-VN")}</strong></div>
+        <div><small>Mốc vận hành xác nhận</small><strong>{data.events.filter(event => event.confirmed).length}/{data.events.length}</strong></div>
+        <div><small>Hồ sơ kiểm tra công khai</small><strong>{data.publicInspection ? "Có hồ sơ tham khảo" : "Chưa có hồ sơ theo bữa"}</strong></div>
+      </section>
       <section
         className="card supervision-photo-section"
         aria-labelledby="supervision-photos-title"
@@ -711,7 +736,7 @@ function SupervisionSection({
         <div className="card-header">
           <div>
             <div className="section-kicker">HÌNH ẢNH MINH HỌA GIÁM SÁT</div>
-            <h2 id="supervision-photos-title">Theo dõi bữa ăn bằng hình ảnh</h2>
+            <h2 id="supervision-photos-title">Theo dõi {mealLabel} bằng hình ảnh</h2>
             <p className="muted">
               Cùng bộ ảnh và dữ liệu công khai ở cả năm không gian: Phụ huynh,
               Ban Giám hiệu, Phòng VH–XH và hai bếp.
@@ -742,7 +767,7 @@ function SupervisionSection({
                   alt={item.title}
                   loading="lazy"
                   onError={(e) => {
-                    e.currentTarget.src = readyServingDemo;
+                    e.currentTarget.src = placeholderPhoto;
                   }}
                 />
                 <span className="supervision-photo-badge">{item.badge}</span>
@@ -764,22 +789,25 @@ function SupervisionSection({
           khai.
         </p>
       </section>
+      <SupervisionStatusPanel school={school} date={date} mealType={mealType} role={role} />
+      <SupervisionJourneyActions school={school} date={date} mealType={mealType} data={data} role={role} />
       <div className="content-grid">
         <MealJourneyPanel
           school={school}
           serviceDate={date}
+          mealType={mealType}
           data={data}
           onReadyPhotoClick={() =>
             setPhotoPreview({
-              url: publishedPhoto ?? readyServingDemo,
-              title: "Ảnh bước Sẵn sàng phục vụ",
+              url: publishedPhoto ?? placeholderPhoto,
+              title: `Ảnh bước Sẵn sàng phục vụ · ${mealLabel}`,
               description: publishedPhoto
                 ? "Ảnh được ghi nhận và đã công khai trong chế độ DEMO."
                 : "Ảnh minh họa DEMO; chưa có ảnh thực tế được duyệt công khai.",
             })
           }
         />
-        <PublicInspectionCard inspection={data.publicInspection} />
+        <PublicInspectionCard inspection={data.publicInspection} mealType={mealType} />
       </div>
       {photoPreview && (
         <Dialog title={photoPreview.title} close={() => setPhotoPreview(null)}>
@@ -790,6 +818,49 @@ function SupervisionSection({
           />
           <p className="demo-note">{photoPreview.description}</p>
         </Dialog>
+      )}
+    </>
+  );
+}
+/** Phạm vi dữ liệu luôn là (trường, ngày, bữa), không phụ thuộc vai trò. */
+function SupervisionSection({
+  school, date, data, mealType, role, onMealTypeChange, loading, error, onRetry,
+}: {
+  school: School;
+  date: string;
+  data?: DayData;
+  role: ViewRole;
+  mealType: Extract<BoardingMealType, "BREAKFAST" | "LUNCH">;
+  onMealTypeChange: (value: Extract<BoardingMealType, "BREAKFAST" | "LUNCH">) => void;
+  loading?: boolean;
+  error?: boolean;
+  onRetry?: () => void;
+}) {
+  const mealLabel = mealType === "BREAKFAST" ? "bữa sáng" : "bữa trưa";
+  return (
+    <div className="supervision-stack">
+      <section className="supervision-meal-context" aria-labelledby="supervision-meal-title">
+        <div>
+          <span className="section-kicker">GIÁM SÁT AN TOÀN THEO TỪNG BỮA</span>
+          <h2 id="supervision-meal-title">Giám sát & an toàn · {mealLabel}</h2>
+          <p>Nhật ký, ảnh đã duyệt, QR món ăn và hồ sơ kiểm tra riêng cho mỗi bữa. Mọi vai trò xem cùng nguồn dữ liệu công khai.</p>
+        </div>
+        <div className="supervision-meal-switch" role="group" aria-label="Chọn bữa cần giám sát">
+          {([{"value": "BREAKFAST", "label": "Bữa sáng", "icon": Coffee}, {"value": "LUNCH", "label": "Bữa trưa", "icon": Utensils}] as const).map(item => (
+            <button type="button" key={item.value} className={mealType === item.value ? "selected" : ""} aria-pressed={mealType === item.value} onClick={() => onMealTypeChange(item.value)}>
+              <item.icon size={16}/>{item.label}
+            </button>
+          ))}
+        </div>
+      </section>
+      {error ? (
+        <div className="error-panel" role="alert"><strong>Chưa tải được giám sát {mealLabel}</strong><p>Không sử dụng dữ liệu của bữa khác để thay thế.</p><button type="button" className="outline" onClick={onRetry}>Thử lại</button></div>
+      ) : loading || !data ? (
+        <div className="loading-grid" role="status" aria-label={`Đang tải giám sát ${mealLabel}`}><div className="skeleton"/><div className="skeleton"/></div>
+      ) : data.mealType !== mealType || data.serviceDate !== date ? (
+        <div className="loading-grid" role="status" aria-label={`Đang đồng bộ dữ liệu ${mealLabel}`}><div className="skeleton"/></div>
+      ) : (
+        <SupervisionMealContent key={`${school.id}-${date}-${mealType}`} school={school} date={date} data={data} mealType={mealType} role={role}/>
       )}
     </div>
   );
@@ -820,7 +891,8 @@ function Login({ close }: { close: () => void }) {
     {
       role: "culture_social_office",
       name: "Ủy ban phường · Phòng VH–XH",
-      description: "Giám sát bữa ăn công khai theo trường trên địa bàn",
+      description:
+        "Giám sát liên thông trường, bếp, nhà cung cấp và hồ sơ toàn địa bàn · Chỉ đọc",
       icon: ShieldCheck,
     },
     {
@@ -846,7 +918,11 @@ function Login({ close }: { close: () => void }) {
         {options.map((item) => (
           <button
             key={item.role}
-            aria-label={item.name}
+            aria-label={
+              item.role === "culture_social_office"
+                ? "Phòng Văn hóa – Xã hội"
+                : item.name
+            }
             onClick={() => {
               void cache.invalidateQueries();
               setRole(item.role);
@@ -873,7 +949,7 @@ function Login({ close }: { close: () => void }) {
   );
 }
 function Shell() {
-  const { schoolId, date, role, setSchool, setDate } = useUI();
+  const { schoolId, date, role, kitchenRole, setSchool, setDate } = useUI();
   const location = useLocation();
   const navigate = useNavigate();
   const reducedMotion = useReducedMotionPreference();
@@ -883,6 +959,8 @@ function Shell() {
   const [search, setSearch] = useState("");
   const [parentMealType, setParentMealType] =
     useState<BoardingMealType>("LUNCH");
+  const [supervisionMealType, setSupervisionMealType] =
+    useState<Extract<BoardingMealType, "BREAKFAST" | "LUNCH">>("LUNCH");
   const pendingDetailScroll = useRef(false);
   const queryClient = useQueryClient();
   useEffect(() => {
@@ -890,6 +968,7 @@ function Shell() {
       void queryClient.invalidateQueries({ queryKey: ["day"] });
       void queryClient.invalidateQueries({ queryKey: ["week"] });
       void queryClient.invalidateQueries({ queryKey: ["parent-meal-day"] });
+      void queryClient.invalidateQueries({ queryKey: ["supervision-meal-day"] });
     };
     const onStorage = (event: StorageEvent) => {
       if (
@@ -903,9 +982,11 @@ function Shell() {
     };
     window.addEventListener("storage", onStorage);
     window.addEventListener("demo-boarding-menu-updated", refresh);
+    window.addEventListener(SUPERVISION_JOURNEY_EVENT, refresh);
     return () => {
       window.removeEventListener("storage", onStorage);
       window.removeEventListener("demo-boarding-menu-updated", refresh);
+      window.removeEventListener(SUPERVISION_JOURNEY_EVENT, refresh);
     };
   }, [queryClient]);
   const week = weekDates(date);
@@ -934,12 +1015,17 @@ function Shell() {
       parentMealType !== "LUNCH" &&
       !!schoolQuery.data,
   });
+  const supervisionMealQuery = useQuery({
+    queryKey: ["supervision-meal-day", school.id, date, supervisionMealType],
+    queryFn: () => demoData.day(school, date, undefined, supervisionMealType),
+    enabled:
+      location.pathname === "/giam-sat" &&
+      !!schoolQuery.data,
+  });
   /** Vai trò tác nghiệp và phụ huynh dùng chung cấu trúc bảng; chế độ công khai chỉ đọc dữ liệu được phép hiển thị. */
   const sharedAdminArea =
     role !== "parent" &&
     ["/thuc-don", "/giam-sat", "/ho-so-phap-ly"].includes(location.pathname);
-  const sharedReferenceArea =
-    role !== "parent" && location.pathname === "/giam-sat";
   const weeklyQuery = useQuery({
     queryKey: ["week", school.id, week[0]],
     queryFn: async () =>
@@ -960,29 +1046,22 @@ function Shell() {
     enabled: location.pathname === "/phan-anh",
   });
   const data = query.data;
+  const supervisionData = supervisionMealQuery.data;
   const parentMealData =
     parentMealType === "LUNCH" ? data : parentMealQuery.data;
-  const readyEvent = data?.events.find((event) => event.status === "READY");
-  const readyPhoto = readyEvent?.confirmed ? readyEvent.photos[0] : undefined;
-  const parentReadyPhoto =
-    parentMealType === "LUNCH" ? readyPhoto : undefined;
-  const adminNav = adminNavigation.filter(
-    (item) => item.path !== "/nhan-su-bep",
-  );
-  const wardReadOnlyPaths = [
-    "/",
-    "/thuc-don",
-    "/giam-sat",
-    "/ho-so-phap-ly",
-    "/van-hanh",
-    "/phan-anh",
-    "/bao-cao",
-  ];
+  const parentReadyEvent = parentMealData?.events.find(event => event.status === "READY");
+  const parentReadyPhoto = parentReadyEvent?.confirmed ? parentReadyEvent.photos[0] : undefined;
+  const adminNav = adminNavigation.filter((item) => {
+    if (role !== "central_kitchen") return true;
+    const policyPath =
+      item.path === "/ho-so-phap-ly" ? "/ho-so" : item.path;
+    return centralKitchenRouteAccess[kitchenRole].includes(policyPath);
+  });
   const nav =
     role === "parent"
       ? navigation
       : role === "culture_social_office"
-        ? adminNav.filter((item) => wardReadOnlyPaths.includes(item.path))
+        ? adminNavigation
         : adminNav;
   const current =
     nav.find((item) => item.path === location.pathname) ?? nav[0]!;
@@ -1305,6 +1384,19 @@ function Shell() {
               </span>
             </div>
           </SpotlightCard>
+          {role === "culture_social_office" && (
+            <div className="ward-readonly-banner" role="status">
+              <ShieldCheck size={20} />
+              <div>
+                <strong>Giám sát toàn địa bàn · Chỉ đọc</strong>
+                <p>
+                  Phòng VH–XH được xem dữ liệu đồng bộ từ trường, bếp và nhà
+                  cung cấp trong phạm vi phường; không được tạo, sửa, xóa,
+                  xác nhận hoặc phát hành dữ liệu tác nghiệp.
+                </p>
+              </div>
+            </div>
+          )}
           {role !== "parent" ? (
             <>
               {!["/giam-sat", "/ho-so-phap-ly"].includes(location.pathname) && (
@@ -1370,24 +1462,21 @@ function Shell() {
                 </div>
               ) : (
                 <>
-                  {sharedReferenceArea && (query.isLoading || !data) ? (
-                    <div
-                      className="loading-grid"
-                      role="status"
-                      aria-label="Đang tải dữ liệu"
-                    >
-                      <div className="skeleton" />
-                      <div className="skeleton" />
-                    </div>
-                  ) : (
-                    <>
-                      {location.pathname === "/giam-sat" && data && (
-                        <SupervisionSection school={school} date={date} data={data} />
-                      )}
-                      {location.pathname === "/ho-so-phap-ly" && (
-                        <KitchenLegalDocuments school={school} role={role} />
-                      )}
-                    </>
+                  {location.pathname === "/giam-sat" && (
+                    <SupervisionSection
+                      school={school}
+                      date={date}
+                      data={supervisionData}
+                      mealType={supervisionMealType}
+                      role={role}
+                      onMealTypeChange={setSupervisionMealType}
+                      loading={supervisionMealQuery.isLoading}
+                      error={supervisionMealQuery.isError}
+                      onRetry={() => { void supervisionMealQuery.refetch(); }}
+                    />
+                  )}
+                  {location.pathname === "/ho-so-phap-ly" && (
+                    <KitchenLegalDocuments school={school} role={role} />
                   )}
                 </>
               )}
@@ -1573,24 +1662,37 @@ function Shell() {
                           )}
                         </>
                       )}
+                      {parentMealType !== "LUNCH" && parentMealQuery.isError ? (
+                        <div className="error-panel" role="alert">
+                          <strong>Không tải được dữ liệu bữa đã chọn</strong>
+                          <p>Không dùng thực đơn hoặc nhật ký bữa trưa để thay thế.</p>
+                          <button className="outline" type="button" onClick={() => { void parentMealQuery.refetch(); }}>Thử lại</button>
+                        </div>
+                      ) : parentMealType !== "LUNCH" && (parentMealQuery.isLoading || !parentMealQuery.data) ? (
+                        <div className="loading-grid" role="status" aria-label="Đang tải thực đơn của bữa đã chọn"><div className="skeleton"/></div>
+                      ) : (
                       <MealDayDetail
                         school={school}
                         date={date}
                         data={parentMealData ?? data}
-                        journeyData={data}
                         mealType={parentMealType}
                         weekView={location.pathname === "/bua-an"}
                         journeyPath="/giam-sat"
                         onOpen={setModal}
                         onNavigate={(path) => {
+                          if (path === "/giam-sat") setSupervisionMealType(parentMealType === "BREAKFAST" ? "BREAKFAST" : "LUNCH");
                           void navigate(path);
                         }}
                         onMealTypeChange={setParentMealType}
                       />
+                      )}
                       <div className="bottom-grid">
                         <button
                           className="trace-callout"
-                          onClick={() => navigate("/giam-sat")}
+                          onClick={() => {
+                            setSupervisionMealType(parentMealType === "BREAKFAST" ? "BREAKFAST" : "LUNCH");
+                            navigate("/giam-sat");
+                          }}
                         >
                           <span className="qr-tile">
                             <ShieldCheck size={34} />
@@ -1630,7 +1732,17 @@ function Shell() {
                     </>
                   )}
                   {location.pathname === "/giam-sat" && (
-                    <SupervisionSection school={school} date={date} data={data} />
+                    <SupervisionSection
+                      school={school}
+                      date={date}
+                      data={supervisionData}
+                      mealType={supervisionMealType}
+                      role={role}
+                      onMealTypeChange={setSupervisionMealType}
+                      loading={supervisionMealQuery.isLoading}
+                      error={supervisionMealQuery.isError}
+                      onRetry={() => { void supervisionMealQuery.refetch(); }}
+                    />
                   )}
                   {location.pathname === "/ho-so-phap-ly" && (
                     <KitchenLegalDocuments school={school} role={role} />
@@ -1839,7 +1951,7 @@ function Shell() {
             src={
               parentReadyPhoto ??
               parentMealData?.photo ??
-              data?.photo ??
+              (parentMealType === "BREAKFAST" ? breakfastDemo : data?.photo) ??
               readyServingDemo
             }
             onError={(event) => {

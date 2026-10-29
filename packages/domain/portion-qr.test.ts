@@ -1,23 +1,23 @@
 import { describe, expect, it } from 'vitest'
-import { activePortionQrs, assertCanIssuePortionQr, assertDispatchQrCoverage, canReadPortionQrRegistry, encodeOpaqueToken } from './portion-qr'
+import { activePortionQrs, assertCanIssuePortionQr, assertDishQrCoverage, canReadPortionQrRegistry, encodeOpaqueToken } from './portion-qr'
 import type { Actor } from './policy'
 import type { PortionQrEvent, PortionQrRecord, PortionQrScope } from './portion-qr'
 
 const scope: PortionQrScope = {schoolId:'school-a',kitchenId:'kitchen-a',wardId:'ward-a',serviceMode:'CENTRAL_KITCHEN',serviceDate:'2026-10-18',mealType:'LUNCH'}
 const kitchen: Actor = {id:'cook-a',role:'central_kitchen',schoolId:null,kitchenId:'kitchen-a',wardId:'ward-a'}
-const records: PortionQrRecord[] = [1,2].map(sequence=>({...scope,id:`qr-${sequence}`,publicToken:`opaque-token-${sequence}`,sequence,batchId:'batch-a',issuedAt:'2026-10-18T08:00:00+07:00',issuedBy:kitchen.id}))
+const records: PortionQrRecord[] = ['Cơm trắng','Canh rau'].map((dishName,index)=>({...scope,id:`qr-${index+1}`,publicToken:`opaque-token-${index+1}`,dishName,sequence:index+1,batchId:'batch-a',issuedAt:'2026-10-18T08:00:00+07:00',issuedBy:kitchen.id}))
 
-describe('Individual portion QR policy', () => {
+describe('Dish QR policy', () => {
   it('only lets the assigned central kitchen issue labels', () => {
     expect(()=>assertCanIssuePortionQr(kitchen,scope,2)).not.toThrow()
     expect(()=>assertCanIssuePortionQr({...kitchen,kitchenId:'other'},scope,2)).toThrow('FORBIDDEN')
     expect(()=>assertCanIssuePortionQr(kitchen,{...scope,serviceMode:'ON_SITE'},2)).toThrow('CENTRAL_KITCHEN_ONLY')
   })
 
-  it('requires one unique active QR for every dispatched portion', () => {
-    expect(()=>assertDispatchQrCoverage(2,records)).not.toThrow()
-    expect(()=>assertDispatchQrCoverage(3,records)).toThrow('QR_COVERAGE_MISMATCH')
-    expect(()=>assertDispatchQrCoverage(2,[records[0]!,{...records[1]!,publicToken:records[0]!.publicToken}])).toThrow('DUPLICATE_QR_TOKEN')
+  it('requires one unique active QR for every dish', () => {
+    expect(()=>assertDishQrCoverage(['Cơm trắng','Canh rau'],records)).not.toThrow()
+    expect(()=>assertDishQrCoverage(['Cơm trắng','Canh rau','Trái cây'],records)).toThrow('QR_DISH_COVERAGE_MISMATCH')
+    expect(()=>assertDishQrCoverage(['Cơm trắng','Canh rau'],[records[0]!,{...records[1]!,publicToken:records[0]!.publicToken}])).toThrow('DUPLICATE_QR_TOKEN')
   })
 
   it('keeps revocation as an append-only event', () => {

@@ -15,6 +15,7 @@ export type PortionQrScope = {
 export type PortionQrRecord = PortionQrScope & {
   id: string
   publicToken: string
+  dishName: string
   sequence: number
   batchId: string
   issuedAt: string
@@ -50,11 +51,14 @@ export function activePortionQrs(records: readonly PortionQrRecord[], events: re
   return records.filter(record => !revoked.has(record.id))
 }
 
-export function assertDispatchQrCoverage(actualServings: number, activeRecords: readonly PortionQrRecord[]) {
-  if (!Number.isSafeInteger(actualServings) || actualServings < 1 || actualServings > 5_000) throw new Error('INVALID_QUANTITY')
-  if (activeRecords.length !== actualServings) throw new Error('QR_COVERAGE_MISMATCH')
-  if (new Set(activeRecords.map(record => record.publicToken)).size !== actualServings) throw new Error('DUPLICATE_QR_TOKEN')
-  if (new Set(activeRecords.map(record => record.sequence)).size !== actualServings) throw new Error('DUPLICATE_QR_SEQUENCE')
+export function assertDishQrCoverage(expectedDishes: readonly string[], activeRecords: readonly PortionQrRecord[]) {
+  const normalized = expectedDishes.map(value => value.trim().toLocaleLowerCase('vi-VN')).filter(Boolean)
+  const expected = new Set(normalized)
+  const actual = activeRecords.map(record => record.dishName.trim().toLocaleLowerCase('vi-VN'))
+  if (!expected.size || expected.size !== normalized.length) throw new Error('INVALID_DISHES')
+  if (activeRecords.length !== expected.size || actual.some(name => !expected.has(name))) throw new Error('QR_DISH_COVERAGE_MISMATCH')
+  if (new Set(actual).size !== activeRecords.length) throw new Error('DUPLICATE_QR_DISH')
+  if (new Set(activeRecords.map(record => record.publicToken)).size !== activeRecords.length) throw new Error('DUPLICATE_QR_TOKEN')
 }
 
 export function encodeOpaqueToken(bytes: Uint8Array) {

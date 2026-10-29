@@ -38,7 +38,7 @@ export type PublicInspection = {
   findingCount: number
   outcome: 'follow_up_required' | 'no_follow_up'
 }
-export type DayData = { servings: number; suppliers: number; dishes: string[]; dishDetails: DishDetail[]; events: MealEvent[]; kitchen: string; photo: string; updatedAt: string; transportDistanceKm: number | null; transportDurationMinutes: number | null; publicInspection: PublicInspection | null; /** Hạn phục vụ do đơn vị ghi nhận; không được suy diễn thành hạn dùng pháp lý. */ mealUseByAt: string | null }
+export type DayData = { serviceDate: string; mealType: BoardingMealType; servings: number; suppliers: number; dishes: string[]; dishDetails: DishDetail[]; events: MealEvent[]; kitchen: string; photo: string; updatedAt: string; transportDistanceKm: number | null; transportDurationMinutes: number | null; publicInspection: PublicInspection | null; /** Hạn phục vụ do đơn vị ghi nhận; không được suy diễn thành hạn dùng pháp lý. */ mealUseByAt: string | null }
 export type KitchenDocumentStatus = 'valid' | 'expiring' | 'missing' | 'not_applicable'
 export type KitchenDocumentCategory = 'legal' | 'people' | 'facility' | 'operations'
 export type KitchenDocument = {
@@ -204,8 +204,9 @@ export const demoData = {
   day: async (school: School, date: string, viewer?: Actor, mealType: BoardingMealType = 'LUNCH'): Promise<DayData> => {
     await pause()
     const showUnconfirmedPhotos = viewer ? canViewUnconfirmedMealPhotos(viewer, mealScope(school)) : false
-    const stored = JSON.parse(localStorage.getItem('demo-admin-meals') ?? '[]') as {schoolId:string;date:string;servings:number;dishes:string[];portions?:Record<string,number>;events:{status:string;time:string;confirmed:boolean;photos?:unknown;actorLabel?:unknown}[]}[]
-    const saved = stored.find(m => m.schoolId===school.id && m.date===date)
+    const stored = JSON.parse(localStorage.getItem('demo-admin-meals') ?? '[]') as {schoolId:string;date:string;mealType?:BoardingMealType;servings:number;dishes:string[];portions?:Record<string,number>;events:{status:string;time:string;confirmed:boolean;photos?:unknown;actorLabel?:unknown}[]}[]
+    // Bản ghi cũ thiếu mealType mặc định là LUNCH. Không sử dụng nhật ký của bữa khác.
+    const saved = stored.find(m => m.schoolId===school.id && m.date===date && (m.mealType ?? 'LUNCH')===mealType)
     const central = school.mode === 'CENTRAL_KITCHEN'
     // Đồng bộ thực đơn theo trường + khối lớp + ngày do BGH quản lý.
     // Bản ghi vận hành DEMO (demo-admin-meals) chỉ cung cấp hành trình, KHÔNG ghi đè tên món.
@@ -226,13 +227,18 @@ export const demoData = {
       nutrition: null,
       verification: 'unverified',
     }))
+    const eventTimes = mealType==='BREAKFAST'
+      ? {PREPARING:'05:45',DISPATCHED:'06:30',ARRIVED:'06:50',PLATED:'07:05',READY:'07:15'}
+      : mealType==='LUNCH'
+        ? {PREPARING:'08:30',DISPATCHED:'09:30',ARRIVED:'10:00',PLATED:'10:20',READY:'10:45'}
+        : {PREPARING:'13:10',DISPATCHED:'13:45',ARRIVED:'14:00',PLATED:'14:10',READY:'14:20'}
     const events: MealEvent[] = saved ? saved.events.map(e=>{
       const reportedPhotos=e.status==='READY'&&Array.isArray(e.photos) ? e.photos.filter((photo):photo is string=>typeof photo==='string'&&photo.startsWith('data:image/')) : []
-      return {status:e.status,label:({DISPATCHED:'Xuất bếp',ARRIVED:'Đến trường',PLATED:'Ra món',READY:'Sẵn sàng phục vụ'} as Record<string,string>)[e.status] ?? e.status,time:e.time,actor:typeof e.actorLabel==='string'?e.actorLabel:'Người thao tác DEMO',confirmed:e.confirmed,photos:e.confirmed||showUnconfirmedPhotos?reportedPhotos:[],hasReportedPhotos:reportedPhotos.length>0}
+      return {status:e.status,label:({PREPARING:'Bắt đầu chế biến',DISPATCHED:'Xuất bếp',ARRIVED:'Đến trường',PLATED:'Ra món',READY:'Sẵn sàng phục vụ'} as Record<string,string>)[e.status] ?? e.status,time:e.time,actor:typeof e.actorLabel==='string'?e.actorLabel:'Người thao tác DEMO',confirmed:e.confirmed,photos:e.confirmed||showUnconfirmedPhotos?reportedPhotos:[],hasReportedPhotos:reportedPhotos.length>0}
     }) : [
-      { status: 'PREPARING', label: 'Bắt đầu chế biến', time: '08:30', actor: central ? 'Bếp trung tâm An Tâm' : 'Nhân viên bếp nhà trường', confirmed: true, photos: [], hasReportedPhotos: false },
-      ...(central ? [{ status: 'DISPATCHED', label: 'Xuất bếp', time: '09:30', actor: 'Bếp trung tâm An Tâm', confirmed: true, photos: [], hasReportedPhotos: false }, { status: 'ARRIVED', label: 'Đến trường', time: '10:00', actor: 'Nhân viên tiếp nhận', confirmed: true, photos: [], hasReportedPhotos: false }] : []),
-      { status: 'PLATED', label: 'Ra món', time: '10:20', actor: 'Nhân viên bếp', confirmed: true, photos: [], hasReportedPhotos: false }, { status: 'READY', label: 'Sẵn sàng phục vụ', time: '10:45', actor: 'Nhân viên bếp (DEMO)', confirmed: true, photos: [], hasReportedPhotos: false },
+      { status: 'PREPARING', label: 'Bắt đầu chế biến', time: eventTimes.PREPARING, actor: central ? 'Bếp trung tâm An Tâm' : 'Nhân viên bếp nhà trường', confirmed: true, photos: [], hasReportedPhotos: false },
+      ...(central ? [{ status: 'DISPATCHED', label: 'Xuất bếp', time: eventTimes.DISPATCHED, actor: 'Bếp trung tâm An Tâm', confirmed: true, photos: [], hasReportedPhotos: false }, { status: 'ARRIVED', label: 'Đến trường', time: eventTimes.ARRIVED, actor: 'Nhân viên tiếp nhận', confirmed: true, photos: [], hasReportedPhotos: false }] : []),
+      { status: 'PLATED', label: 'Ra món', time: eventTimes.PLATED, actor: 'Nhân viên bếp', confirmed: true, photos: [], hasReportedPhotos: false }, { status: 'READY', label: 'Sẵn sàng phục vụ', time: eventTimes.READY, actor: 'Nhân viên bếp (DEMO)', confirmed: true, photos: [], hasReportedPhotos: false },
     ]
     const dispatchedAt=events.find(event=>event.status==='DISPATCHED')?.time
     const arrivedAt=events.find(event=>event.status==='ARRIVED')?.time
@@ -240,7 +246,7 @@ export const demoData = {
     const plannedPhoto = plannedDish
       ? dishImage(plannedDish.name, plannedDish.mealType, plannedDish.imageUrl)
       : dishImage(mealType === 'BREAKFAST' ? 'Bữa sáng' : 'Trái cây bữa xế', mealType)
-    return { servings: boardDishes.length ? Math.max(...boardDishes.map(dish => dish.expectedQuantity)) : (mealType === 'LUNCH' ? (saved?.servings ?? 0) : 0), suppliers: 4, dishes: selectedDishes, dishDetails, kitchen: central ? 'Bếp trung tâm An Tâm' : 'Bếp ăn nhà trường', photo: mealType === 'LUNCH' ? (boardDishes.find(dish => dish.imageUrl)?.imageUrl ?? foodPhoto) : plannedPhoto, updatedAt: '10:45', events, transportDistanceKm: central ? 12.4 : null, transportDurationMinutes: central ? minutesBetween(dispatchedAt,arrivedAt) : null, publicInspection: publicInspections[school.id] ?? null, mealUseByAt: !saved && mealType === 'LUNCH' ? `${date}T12:45:00+07:00` : null }
+    return { serviceDate: date, mealType, servings: boardDishes.length ? Math.max(...boardDishes.map(dish => dish.expectedQuantity)) : (mealType === 'LUNCH' ? (saved?.servings ?? 0) : 0), suppliers: 4, dishes: selectedDishes, dishDetails, kitchen: central ? 'Bếp trung tâm An Tâm' : 'Bếp ăn nhà trường', photo: mealType === 'LUNCH' ? (boardDishes.find(dish => dish.imageUrl)?.imageUrl ?? foodPhoto) : plannedPhoto, updatedAt: events.at(-1)?.time ?? eventTimes.READY, events, transportDistanceKm: central ? 12.4 : null, transportDurationMinutes: central ? minutesBetween(dispatchedAt,arrivedAt) : null, publicInspection: mealType==='LUNCH' ? (publicInspections[school.id] ?? null) : null, mealUseByAt: !saved ? `${date}T${mealType==='BREAKFAST'?'08:15':mealType==='LUNCH'?'12:45':'15:00'}:00+07:00` : null }
   },
   kitchenDocuments: async (school: School): Promise<KitchenDocument[]> => {
     await pause()

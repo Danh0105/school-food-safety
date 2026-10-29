@@ -11,12 +11,12 @@ test('central-kitchen roles receive focused dashboards and scoped navigation', a
   await page.setViewportSize({ width: 1440, height: 1000 })
   await page.goto('/')
   const roles = [
-    { name:'Bếp trưởng · Bếp trung tâm', title:'Điều phối dây chuyền chế biến.', visible:['Nhân sự & phân ca','Quản lý kho'], hidden:['Nhà cung cấp','QR từng suất ăn'] },
+    { name:'Bếp trưởng · Bếp trung tâm', title:'Điều phối dây chuyền chế biến.', visible:['Nhân sự & phân ca','Quản lý kho'], hidden:['Nhà cung cấp','QR từng món ăn'] },
     { name:'Sơ chế · Bếp trung tâm', title:'Chuẩn bị đúng lô, đúng định lượng.', visible:['Nguồn gốc nguyên liệu','Tiến trình suất ăn'], hidden:['Nhân sự & phân ca','Quản lý kho'] },
-    { name:'Nấu chính · Bếp trung tâm', title:'Theo dõi từng mẻ nấu.', visible:['Thực đơn & bữa ăn','Tiến trình suất ăn'], hidden:['Nhân sự & phân ca','QR từng suất ăn'] },
-    { name:'Chia suất & đóng gói · Bếp trung tâm', title:'Đủ suất trước giờ xuất bếp.', visible:['QR từng suất ăn','Tiến trình suất ăn'], hidden:['Nhân sự & phân ca','Nhà cung cấp'] },
-    { name:'Điều phối giao nhận · Bếp trung tâm', title:'Đúng chuyến, đúng trường, đúng giờ.', visible:['QR từng suất ăn','Ghi nhận nhập / xuất'], hidden:['Nhân sự & phân ca','Thực đơn & bữa ăn'] },
-    { name:'Vệ sinh · Bếp trung tâm', title:'Giữ nhịp vệ sinh xuyên suốt ca.', visible:['Giám sát & hồ sơ','Hồ sơ & giấy tờ'], hidden:['Tiến trình suất ăn','QR từng suất ăn'] },
+    { name:'Nấu chính · Bếp trung tâm', title:'Theo dõi từng mẻ nấu.', visible:['Thực đơn & bữa ăn','Tiến trình suất ăn'], hidden:['Nhân sự & phân ca','QR từng món ăn'] },
+    { name:'Chia suất & đóng gói · Bếp trung tâm', title:'Đủ suất trước giờ xuất bếp.', visible:['QR từng món ăn','Tiến trình suất ăn'], hidden:['Nhân sự & phân ca','Nhà cung cấp'] },
+    { name:'Điều phối giao nhận · Bếp trung tâm', title:'Đúng chuyến, đúng trường, đúng giờ.', visible:['QR từng món ăn','Ghi nhận nhập / xuất'], hidden:['Nhân sự & phân ca','Thực đơn & bữa ăn'] },
+    { name:'Vệ sinh · Bếp trung tâm', title:'Giữ nhịp vệ sinh xuyên suốt ca.', visible:['Giám sát & hồ sơ','Hồ sơ & giấy tờ'], hidden:['Tiến trình suất ăn','QR từng món ăn'] },
   ] as const
 
   for (const role of roles) {

@@ -40,3 +40,6 @@
 @media print{
   body *{visibility:hidden!important}.portion-print-wrap,.portion-print-wrap *{visibility:visible!important}.portion-print-wrap{position:absolute;inset:0;width:100%;padding:0;border:0;box-shadow:none}.portion-print-toolbar{display:none}.portion-label-sheet{grid-template-columns:repeat(3,1fr);gap:4mm}.portion-label{min-height:38mm;border:1px dashed #777;padding:2mm}.portion-label svg{width:28mm;height:28mm;flex-basis:28mm}@page{size:A4;margin:8mm}
 }
+.portion-meal-switch{display:inline-flex;justify-self:start;gap:4px;padding:4px;border:1px solid var(--border);border-radius:12px;background:var(--surface)}
+.portion-meal-switch button{min-width:112px;min-height:42px;padding:9px 16px;border-radius:9px;color:var(--muted);font-size:13px;font-weight:750}
+.portion-meal-switch button.selected{background:var(--primary);color:#fff}

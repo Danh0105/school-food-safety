@@ -5,7 +5,7 @@ import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { BrowserRouter, Navigate, NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { QueryClient, QueryClientProvider, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Activity, AlertCircle, ArrowRight, Bell, Boxes, Building2, CalendarClock, CalendarDays, CheckCheck, CheckCircle2, ChevronDown, ChevronRight, CircleHelp, ClipboardCheck, Clock3, CookingPot, FileCheck2, FileSearch, Heart, House, Leaf, LogIn, Menu, MessageCircle, MessageSquareText, Moon, QrCode, School as SchoolIcon, Search, ShieldCheck, Scale, Sprout, Sun, Users, Utensils, Warehouse, X } from 'lucide-react'
+import { Activity, AlertCircle, ArrowRight, Bell, Building2, CalendarDays, CheckCheck, CheckCircle2, ChevronDown, ChevronRight, CircleHelp, ClipboardCheck, Clock3, CookingPot, FileCheck2, FileSearch, Heart, House, Leaf, LogIn, Menu, MessageCircle, MessageSquareText, Moon, QrCode, School as SchoolIcon, Search, ShieldCheck, Scale, Sprout, Sun, Users, Utensils, Warehouse, X } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { demoData, demo, schools as demoSchools } from './lib/data'
 import type { DayData, PublicInspection, School } from './lib/data'
@@ -31,7 +31,7 @@ const BoardingMenuManager = lazy(() => import('./BoardingMenuManager'))
 const FeedbackForm = lazy(() => import('./FeedbackForm'))
 const roleLabels:Record<ViewRole,string> = {parent:'Phụ huynh',school_board:'Ban Giám hiệu',central_kitchen:'Bếp trung tâm',school_receiver:'Tiếp nhận tại trường',meal_service_staff:'Nhân viên ra món',school_kitchen:'Bếp tại trường',culture_social_office:'Ủy ban phường · Phòng VH–XH'}
 const roleHomeHeadings:Record<Exclude<ViewRole,'parent'>,string>={school_board:'Chăm chút bữa ăn, mỗi ngày.',central_kitchen:'Từ căn bếp, gửi trọn an tâm.',school_receiver:'Tiếp nhận đúng chuyến, đúng trường.',meal_service_staff:'Sẵn sàng phục vụ, đúng từng mốc.',school_kitchen:'Từ căn bếp, gửi trọn an tâm.',culture_social_office:'Một góc nhìn, toàn địa bàn.'}
-const adminNavigation = [{path:'/',label:'Tổng quan điều hành',icon:House},{path:'/thuc-don',label:'Thực đơn & bữa ăn',icon:Utensils},{path:'/giam-sat',label:'Giám sát & an toàn',icon:ShieldCheck},{path:'/ho-so-phap-ly',label:'Hồ sơ pháp lý & điều kiện bếp',icon:FileCheck2},{path:'/van-hanh',label:'Tiến trình suất ăn',icon:Activity},{path:'/nhan-su-bep',label:'Nhân sự & phân ca',icon:CalendarClock},{path:'/ma-qr-suat-an',label:'QR từng suất ăn',icon:QrCode},{path:'/quan-ly-kho',label:'Quản lý kho',icon:Warehouse},{path:'/nha-cung-cap',label:'Nhà cung cấp',icon:Building2},{path:'/xuat-nhap-ton',label:'Xuất nhập tồn',icon:Boxes},{path:'/phan-anh',label:'Phản ánh & góp ý',icon:MessageSquareText},{path:'/bao-cao',label:'Báo cáo tổng hợp',icon:CalendarDays}]
+const adminNavigation = [{path:'/',label:'Tổng quan điều hành',icon:House},{path:'/thuc-don',label:'Thực đơn & bữa ăn',icon:Utensils},{path:'/giam-sat',label:'Giám sát & an toàn',icon:ShieldCheck},{path:'/ho-so-phap-ly',label:'Hồ sơ pháp lý & điều kiện bếp',icon:FileCheck2},{path:'/ma-qr-suat-an',label:'QR từng suất ăn',icon:QrCode},{path:'/quan-ly-kho',label:'Quản lý kho',icon:Warehouse},{path:'/nha-cung-cap',label:'Nhà cung cấp',icon:Building2},{path:'/phan-anh',label:'Phản ánh & góp ý',icon:MessageSquareText},{path:'/bao-cao',label:'Báo cáo tổng hợp',icon:CalendarDays}]
 const client = new QueryClient({ defaultOptions: { queries: { retry: 1, staleTime: 30_000 } } })
 const navigation: { path: string; label: string; icon: LucideIcon }[] = [
   {path:'/', label:'Tổng quan', icon:House}, {path:'/bua-an',label:'Bữa ăn học đường',icon:Utensils}, {path:'/giam-sat',label:'Giám sát & an toàn',icon:ShieldCheck}, {path:'/ho-so-phap-ly',label:'Hồ sơ pháp lý & điều kiện bếp',icon:FileCheck2}, {path:'/phan-anh',label:'Phản ánh & góp ý',icon:MessageSquareText},
@@ -170,8 +170,8 @@ function Shell() {
  const weeklyQuery=useQuery({queryKey:['week',school.id,week[0]],queryFn:async()=>Promise.all(week.map(async item=>({date:item,data:await demoData.day(school,item)}))),enabled:role==='parent'&&location.pathname==='/bua-an'&&!!schoolQuery.data})
  const feedback=useQuery({queryKey:['feedback'],queryFn:demoData.feedback,enabled:location.pathname==='/phan-anh'})
  const data=query.data; const readyEvent=data?.events.find(event=>event.status==='READY'); const readyPhoto=readyEvent?.confirmed?readyEvent.photos[0]:undefined
- const adminNav=adminNavigation.filter(item=>item.path!=='/nhan-su-bep')
- const wardReadOnlyPaths=['/','/thuc-don','/giam-sat','/ho-so-phap-ly','/van-hanh','/phan-anh','/bao-cao']
+ const adminNav=adminNavigation
+ const wardReadOnlyPaths=['/','/thuc-don','/giam-sat','/ho-so-phap-ly','/phan-anh','/bao-cao']
  const nav=role==='parent'?navigation:role==='culture_social_office'?adminNav.filter(item=>wardReadOnlyPaths.includes(item.path)):adminNav
  const current=nav.find(item=>item.path===location.pathname) ?? nav[0]!
  const displayRole=roleLabels[role]

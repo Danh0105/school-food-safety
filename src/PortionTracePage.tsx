@@ -61,7 +61,8 @@ function TraceDetails({ record, data }: {
   record: NonNullable<ReturnType<typeof portionQrDemo.findPublic>>['record']
   data: DayData
 }) {
-  const ingredients = data.dishDetails.flatMap(detail => detail.ingredients.map(ingredient => ({ ...ingredient, dish: detail.name })))
+  const dishDetails = data.dishDetails.filter(detail => detail.name.toLocaleLowerCase('vi-VN') === record.dishName.toLocaleLowerCase('vi-VN'))
+  const ingredients = dishDetails.flatMap(detail => detail.ingredients.map(ingredient => ({ ...ingredient, dish: detail.name })))
   const suppliers = [...new Map(ingredients.filter(item => item.supplier).map(item => [item.supplier, item])).values()]
   const receivingTrace = publicIngredientReceivingTrace({
     itemIds: ingredients.flatMap(item => item.inventoryItemId ? [item.inventoryItemId] : []),
@@ -70,7 +71,7 @@ function TraceDetails({ record, data }: {
     serviceDate: record.serviceDate,
   })
   const linkedLots = publicTraceLots.filter(lot => {
-    const dishNames = new Set([...record.dishNames, ...data.dishes].map(value => value.toLocaleLowerCase('vi-VN')))
+    const dishNames = new Set([record.dishName].map(value => value.toLocaleLowerCase('vi-VN')))
     const lotCode = lot.lotCode.toLocaleLowerCase('vi-VN')
     const belongsToServiceDate = lot.receivedAt.slice(0, 10) === record.serviceDate
     return belongsToServiceDate && (dishNames.has(lot.linkedDish.toLocaleLowerCase('vi-VN')) || ingredients.some(item => item.lotCode?.toLocaleLowerCase('vi-VN') === lotCode))
@@ -103,7 +104,7 @@ function TraceDetails({ record, data }: {
   return <>
     <section className="portion-product-summary" aria-label="Thông tin suất ăn ngày">
       <div className="portion-product-image"><img src={data.photo} alt="Ảnh suất ăn trong ngày · Dữ liệu DEMO"/><span>Ảnh suất ăn · DEMO</span></div>
-      <div className="portion-product-copy"><p className="section-kicker">THÔNG TIN SUẤT ĂN NGÀY</p><h2>Suất {record.mealType === 'LUNCH' ? 'ăn trưa' : record.mealType === 'BREAKFAST' ? 'ăn sáng' : 'ăn xế'} #{String(record.sequence).padStart(3, '0')}</h2><strong className={readyEvent?.confirmed ? 'ready' : ''}>{readyEvent?.confirmed ? 'Sẵn sàng phục vụ · Đã xác nhận' : readyEvent ? 'Đã báo cáo · Chờ BGH xác nhận' : 'Chưa cập nhật trạng thái'}</strong><dl><div><dt>Serial</dt><dd>{serial}</dd></div><div><dt>Ngày phục vụ</dt><dd>{dateLabel(record.serviceDate)}</dd></div><div><dt>Thực đơn</dt><dd>{data.dishes.length ? data.dishes.join(' · ') : 'Chưa công khai'}</dd></div><div><dt>Số suất của bữa</dt><dd>{data.servings.toLocaleString('vi-VN')} suất dự kiến</dd></div></dl></div>
+      <div className="portion-product-copy"><p className="section-kicker">THÔNG TIN MÓN ĂN TRONG NGÀY</p><h2>{record.dishName}</h2><strong className={readyEvent?.confirmed ? 'ready' : ''}>{readyEvent?.confirmed ? 'Sẵn sàng phục vụ · Đã xác nhận' : readyEvent ? 'Đã báo cáo · Chờ BGH xác nhận' : 'Chưa cập nhật trạng thái'}</strong><dl><div><dt>Serial</dt><dd>{serial}</dd></div><div><dt>Ngày phục vụ</dt><dd>{dateLabel(record.serviceDate)}</dd></div><div><dt>Loại bữa</dt><dd>{record.mealType === 'LUNCH' ? 'Bữa trưa' : record.mealType === 'BREAKFAST' ? 'Bữa sáng' : 'Bữa xế'}</dd></div><div><dt>Số suất dự kiến</dt><dd>{data.servings.toLocaleString('vi-VN')} suất</dd></div></dl></div>
     </section>
 
     <section className="portion-public-section portion-process-section" aria-labelledby="portion-process-title">
@@ -116,8 +117,8 @@ function TraceDetails({ record, data }: {
     </section>
 
     <section className="portion-public-section" aria-labelledby="portion-menu-title">
-      <div className="portion-public-title"><div><p className="section-kicker">THỰC ĐƠN & ĐỊNH LƯỢNG</p><h2 id="portion-menu-title">Chi tiết món trong ngày</h2><p>Định lượng lấy từ thực đơn DEMO của Ban Giám hiệu; trường chưa xác minh được ghi nhãn rõ ràng.</p></div><Scale/></div>
-      <div className="portion-menu-list">{data.dishDetails.length > 0 ? data.dishDetails.map(detail => <MenuQuantity detail={detail} key={detail.name}/>) : <div className="portion-data-empty">Chưa có thực đơn công khai cho ngày phục vụ này.</div>}</div>
+      <div className="portion-public-title"><div><p className="section-kicker">THỰC ĐƠN & ĐỊNH LƯỢNG</p><h2 id="portion-menu-title">Chi tiết riêng của món</h2><p>QR này chỉ hiển thị định lượng và nguyên liệu liên quan trực tiếp đến “{record.dishName}”.</p></div><Scale/></div>
+      <div className="portion-menu-list">{dishDetails.length > 0 ? dishDetails.map(detail => <MenuQuantity detail={detail} key={detail.name}/>) : <div className="portion-data-empty">Chưa có định lượng công khai cho món ăn này.</div>}</div>
     </section>
 
     <section className="portion-public-section" aria-labelledby="portion-source-title">
@@ -144,7 +145,7 @@ function TraceDetails({ record, data }: {
       <div className="portion-photo-grid">{photos.map((photo, index) => <figure key={`${photo.slice(0, 40)}-${index}`}><img src={photo} alt={index === 0 ? 'Hình ảnh món ăn trong thực đơn DEMO' : `Ảnh bữa ăn đã duyệt công khai ${index}`} loading="lazy"/><figcaption>{publishedReadyPhotos.includes(photo) ? 'Ảnh READY đã xác nhận công khai · DEMO' : 'Ảnh món trong thực đơn · DEMO'}</figcaption></figure>)}</div>
     </section>
 
-    <div className="portion-service-note"><QrCode size={19}/><p>Đây là QR riêng của suất <strong>#{String(record.sequence).padStart(3, '0')}</strong> trong lô <strong>{activeCount.toLocaleString('vi-VN')} suất</strong>. Các QR cùng bữa ăn dùng chung hồ sơ thực đơn và giám sát, nhưng có token truy xuất riêng để thu hồi từng nhãn khi cần.</p></div>
+    <div className="portion-service-note"><QrCode size={19}/><p>Đây là QR riêng của món <strong>{record.dishName}</strong>. Bữa này có <strong>{activeCount.toLocaleString('vi-VN')} món đang có QR</strong>; mỗi mã chỉ truy xuất một món và có thể thu hồi độc lập.</p></div>
   </>
 }
 
@@ -166,14 +167,14 @@ export default function PortionTracePage({ token }: { token: string }) {
   if (state === 'REVOKED') return <main className="portion-public"><section className="portion-public-card portion-public-state"><span className="portion-public-icon invalid"><AlertCircle/></span><p className="section-kicker">QR ĐÃ THU HỒI</p><h1>Mã này không còn hiệu lực</h1><p>Bếp đã thu hồi nhãn QR này. Không sử dụng suất ăn dựa trên mã cũ; vui lòng liên hệ đơn vị phụ trách để nhận nhãn thay thế.</p><div className="portion-public-warning"><AlertCircle size={18}/>Trạng thái thu hồi không phải kết luận về an toàn thực phẩm.</div></section></main>
 
   return <main className="portion-public"><article className="portion-public-card">
-    <header className="portion-public-head"><span className="portion-public-icon"><QrCode/></span><div><p className="section-kicker">MÃ RIÊNG CHO TỪNG SUẤT · DEMO</p><h1>Suất ăn #{String(record.sequence).padStart(3, '0')}</h1><span className="portion-active"><CheckCircle2 size={14}/>QR đang hoạt động</span></div></header>
+    <header className="portion-public-head"><span className="portion-public-icon"><QrCode/></span><div><p className="section-kicker">MỖI QR · MỘT MÓN ĂN · DEMO</p><h1>{record.dishName}</h1><span className="portion-active"><CheckCircle2 size={14}/>QR đang hoạt động</span></div></header>
     <div className="portion-public-warning demo"><AlertCircle size={18}/>Dữ liệu minh họa trên trình duyệt, chưa phải bản ghi vận hành chính thức.</div>
     <div className="portion-public-facts">
       <div><School/><span><small>Trường nhận</small><strong>{record.schoolName}</strong></span></div>
       <div><CookingPot/><span><small>Đơn vị chuẩn bị</small><strong>{record.kitchenName}</strong></span></div>
       <div><CalendarDays/><span><small>Ngày phục vụ</small><strong>{dateLabel(record.serviceDate)}</strong></span></div>
       <div><Utensils/><span><small>Loại bữa</small><strong>{record.mealType === 'LUNCH' ? 'Bữa trưa' : record.mealType === 'BREAKFAST' ? 'Bữa sáng' : 'Bữa xế'}</strong></span></div>
-      <div><Scale/><span><small>Số thứ tự suất</small><strong>#{String(record.sequence).padStart(3, '0')}</strong></span></div>
+      <div><Scale/><span><small>Món được truy xuất</small><strong>{record.dishName}</strong></span></div>
       <div><Clock3/><span><small>QR phát hành</small><strong>{dateTimeLabel(record.issuedAt)}</strong></span></div>
     </div>
     {mealQuery.isLoading && <div className="portion-trace-loading" role="status"><span className="skeleton"/><span className="skeleton"/><p>Đang tải hồ sơ bữa ăn công khai…</p></div>}

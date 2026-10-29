@@ -550,6 +550,11 @@ form .feedback-photo-picker.disabled{cursor:not-allowed;opacity:.6}
 .journey-progress .journey-footer{margin-top:0;padding-bottom:12px}
 .detail-section .journey-progress{padding-bottom:12px}
 .detail-section .journey-progress .journey-summary{margin:0 24px 20px}
+.ward-readonly-banner{display:flex;align-items:flex-start;gap:11px;margin-bottom:18px;padding:14px 16px;border:1px solid color-mix(in srgb,var(--primary) 24%,var(--border));border-radius:14px;background:color-mix(in srgb,var(--green-soft) 48%,var(--surface));color:var(--text)}
+.ward-readonly-banner>svg{flex:0 0 auto;color:var(--primary)}
+.ward-readonly-banner strong{font-size:13px}
+.ward-readonly-banner p{margin-top:3px;color:var(--muted);font-size:11px;line-height:1.55}
+@media(max-width:600px){.ward-readonly-banner{margin-inline:0;padding:12px}.ward-readonly-banner p{font-size:10px}}
 .detail-section .journey-progress .timeline.compact{padding:0 25px 7px}
 .detail-section .journey-progress .journey-footer{margin-left:24px;margin-right:24px}
 @media(max-width:760px){
@@ -591,3 +596,76 @@ form .feedback-photo-picker.disabled{cursor:not-allowed;opacity:.6}
 @media(max-width:760px){.meal-portion-panel{padding:13px 11px;margin:6px 0 16px}.meal-portion-heading{flex-wrap:wrap}.meal-portion-heading h3{font-size:13px}.meal-portion-dish-head{align-items:flex-start}.meal-portion-table th,.meal-portion-table td{padding:9px 7px}.meal-portion-table{font-size:10px}}
 
 .meal-portion-ingredient-button{background:transparent;border:0;color:#174e87;font:inherit;font-weight:750;cursor:pointer;display:inline-flex;align-items:center;gap:5px;padding:5px;border-radius:6px;text-align:left}.meal-portion-ingredient-button:hover,.meal-portion-ingredient-button:focus-visible{background:#e9f3ff;text-decoration:underline}.meal-portion-ingredient-button svg:last-child{color:#7c97b6}
+.supervision-meal-context{display:flex;align-items:center;justify-content:space-between;gap:18px;margin-bottom:18px;padding:17px 19px;border:1px solid var(--border);border-radius:15px;background:var(--surface)}
+.supervision-meal-context h2{font-size:18px}.supervision-meal-context p{margin-top:4px;color:var(--muted);font-size:12px;line-height:1.55}
+.supervision-meal-switch{display:inline-flex;flex:0 0 auto;gap:4px;padding:4px;border-radius:11px;background:var(--surface-alt)}
+.supervision-meal-switch button{min-width:106px;min-height:42px;padding:9px 14px;border-radius:8px;color:var(--muted);font-size:13px;font-weight:750}
+.supervision-meal-switch button.selected{background:var(--primary);color:#fff;box-shadow:0 4px 12px color-mix(in srgb,var(--primary) 20%,transparent)}
+@media(max-width:600px){.supervision-meal-context{align-items:stretch;flex-direction:column;padding:15px}.supervision-meal-switch{width:100%}.supervision-meal-switch button{flex:1;min-width:0}}
+
+/* Giám sát tách độc lập theo (trường, ngày, bữa) và giữ bộ chọn khi đang tải. */
+.supervision-meal-switch button{display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.supervision-meal-overview{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.supervision-meal-overview>div{min-width:0;display:flex;flex-direction:column;gap:7px;justify-content:center;padding:15px 17px;background:var(--surface);border:1px solid var(--border);border-radius:13px}
+.supervision-meal-overview small{color:var(--muted);font-size:11px;line-height:1.4}
+.supervision-meal-overview strong{color:var(--text);font-size:17px;font-weight:750;line-height:1.35;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.supervision-meal-overview>div:last-child strong{font-size:13px;color:var(--primary)}
+@media(max-width:900px){.supervision-meal-overview{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:480px){.supervision-meal-overview{gap:8px}.supervision-meal-overview>div{padding:12px}.supervision-meal-overview strong{font-size:15px}.supervision-meal-overview small{font-size:10px}.supervision-meal-switch button{gap:6px}}
+
+/* Bảng cập nhật kiểm thực/lưu mẫu tách riêng theo trường, ngày và bữa. */
+.supervision-checklist{padding-bottom:0;overflow:hidden}
+.supervision-checklist-header{display:flex;align-items:flex-start;justify-content:space-between;gap:18px}
+.supervision-checklist-actions{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:10px}
+.supervision-checklist-actions .primary,.supervision-check-controls .primary,.supervision-check-controls .outline,.supervision-edit-buttons button{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:36px;padding:9px 12px;border-radius:9px;font-size:11px;font-weight:750;white-space:normal;text-align:center}
+.supervision-check-count{display:inline-flex;align-items:center;gap:7px;font-size:12px;color:var(--primary);font-weight:750}
+.supervision-check-rows{display:grid;margin:0 24px 18px;border:1px solid var(--border);border-radius:14px;overflow:hidden;background:var(--surface)}
+.supervision-check-row{display:grid;grid-template-columns:35px minmax(0,1fr) auto;gap:15px;align-items:center;padding:18px 17px;border-bottom:1px solid var(--border)}
+.supervision-check-row:last-child{border-bottom:0}
+.supervision-check-icon{width:35px;height:35px;display:grid;place-items:center;color:var(--primary);border-radius:10px;background:var(--surface-alt)}
+.supervision-check-main{min-width:0}
+.supervision-check-main>strong{display:block;font-size:13px;line-height:1.5;color:var(--text)}
+.supervision-check-main>p{font-size:11px;color:var(--muted);line-height:1.55;margin-top:4px}
+.supervision-check-main>small{display:block;font-size:10px;color:var(--muted);line-height:1.55;margin-top:7px;overflow-wrap:anywhere}
+.supervision-check-controls{display:flex;justify-content:flex-end;align-items:center;flex-wrap:wrap;gap:7px;max-width:330px}
+.supervision-check-pill{display:inline-flex;align-items:center;gap:5px;padding:7px 9px;border-radius:20px;background:var(--surface-alt);color:var(--muted);font-size:10px;font-weight:750;white-space:nowrap}
+.supervision-check-pill.confirmed{background:#e8f6ed;color:#287046}
+.supervision-check-pill.reported{background:#fff4db;color:#8c5a10}
+.supervision-check-pill.revision_requested{background:#feeced;color:#ab4444}
+.supervision-check-footer{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:15px 24px;border-top:1px solid var(--border);background:var(--surface-alt)}
+.supervision-check-footer>p{display:flex;align-items:start;gap:8px;color:var(--muted);font-size:11px;line-height:1.6}
+.supervision-check-footer>p svg{flex:0 0 auto}
+.supervision-check-footer button{flex:0 0 auto;font-size:11px}
+.supervision-status-history{margin:9px 0 0 17px;padding:0;font-size:10px;color:var(--muted);line-height:1.65}
+.supervision-status-history li{padding:2px 0}
+.supervision-status-history strong{font-size:10px;color:var(--text)}
+.supervision-status-message{display:flex;align-items:center;gap:10px;margin:0 24px 16px;padding:11px 13px;border:1px solid #c8e4d3;border-radius:9px;background:#eef9f1;color:#286646;font-size:12px;line-height:1.5}
+.supervision-status-message span{flex:1}
+.supervision-status-message button{padding:4px}
+.supervision-edit-backdrop{position:fixed;inset:0;z-index:105;display:grid;place-items:center;padding:15px;background:#101f35a8;backdrop-filter:blur(3px)}
+.supervision-edit-dialog{width:min(100%,560px);max-height:min(90vh,850px);overflow:auto;padding:22px;border:1px solid var(--border);border-radius:17px;background:var(--surface);box-shadow:0 16px 70px #0a21435a}
+.supervision-edit-dialog .dialog-head{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.supervision-edit-dialog .dialog-head h2{font-size:21px}
+.supervision-edit-context{margin-top:15px;padding:12px;border-radius:9px;background:var(--surface-alt);font-size:12px;line-height:1.65;color:var(--muted)}
+.supervision-edit-context strong{color:var(--text)}
+.supervision-edit-form{display:grid;gap:18px;margin-top:19px}
+.supervision-edit-form label{display:grid;gap:7px;font-weight:700;font-size:12px;color:var(--text)}
+.supervision-edit-form input,.supervision-edit-form textarea{width:100%;padding:12px 13px;border:1px solid var(--border);border-radius:9px;background:var(--surface);color:var(--text);font-size:13px;resize:vertical}
+.supervision-edit-form input:focus-visible,.supervision-edit-form textarea:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+.supervision-edit-guidance{background:var(--surface-alt);padding:12px;border-radius:9px;font-size:12px;color:var(--muted);line-height:1.65}
+.supervision-edit-buttons{display:flex;justify-content:flex-end;align-items:center;gap:12px}
+.supervision-edit-form .error{color:#b42318;font-size:12px}
+@media(max-width:900px){.supervision-checklist-header{flex-wrap:wrap}.supervision-checklist-actions{justify-content:flex-start}}
+@media(max-width:600px){.supervision-check-rows{margin:0 15px 14px}.supervision-check-row{grid-template-columns:32px minmax(0,1fr);gap:10px;padding:14px 12px}.supervision-check-icon{width:32px;height:32px}.supervision-check-controls{grid-column:2;justify-content:flex-start;max-width:none}.supervision-check-footer{flex-direction:column;align-items:flex-start;padding:14px 15px}.supervision-status-message{margin:0 15px 14px}.supervision-edit-dialog{padding:17px}.supervision-check-main>strong{font-size:12px}.supervision-checklist-actions{width:100%}}
+
+.supervision-journey-actions{padding-bottom:0;overflow:hidden}
+.supervision-stage-rows{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:0 24px 16px}
+.supervision-stage-row{display:flex;align-items:center;gap:11px;min-width:0;border:1px solid var(--border);border-radius:11px;padding:13px;background:var(--surface)}
+.supervision-stage-info{display:flex;flex-direction:column;gap:4px;min-width:0;flex:1}
+.supervision-stage-info strong{font-size:12px;color:var(--text)}
+.supervision-stage-info small{font-size:10px;line-height:1.45;color:var(--muted)}
+.supervision-stage-row .supervision-check-controls{max-width:210px}
+.supervision-stage-row .supervision-check-controls .outline,.supervision-stage-row .supervision-check-controls .primary{font-size:10px;min-height:32px;padding:6px 9px}
+.supervision-stage-footnote{padding:13px 24px;border-top:1px solid var(--border);color:var(--muted);font-size:11px;line-height:1.6;background:var(--surface-alt)}
+@media(max-width:1000px){.supervision-stage-rows{grid-template-columns:1fr}}
+@media(max-width:600px){.supervision-stage-rows{margin:0 15px 14px}.supervision-stage-row{flex-wrap:wrap}.supervision-stage-row .supervision-check-controls{max-width:none;width:100%;justify-content:flex-start;padding-left:46px}.supervision-stage-footnote{padding:13px 15px}}
