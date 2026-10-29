@@ -1,0 +1,26 @@
+.kitchen-proposals{padding:17px 20px;background:#fff;border:1px solid #dfe6f1;border-radius:14px;margin:18px 0}
+.kitchen-proposals-heading{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.kitchen-proposals-heading h3{font-size:19px;color:#12396a;margin:6px 0}.kitchen-proposals-heading p{font-size:12px;color:#687892;margin:0;line-height:1.6}
+.kitchen-proposals-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px;margin-top:16px}
+.kitchen-proposal-card{padding:12px!important;background:#f9fcff!important;border:1px solid #dce6f4!important;display:grid;grid-template-columns:85px minmax(0,1fr);align-items:center;gap:12px;min-width:0}
+.kitchen-proposal-card>img{width:85px;height:86px;object-fit:cover;border-radius:10px}.kitchen-proposal-card h4{font-size:14px;margin:6px 0 4px;color:#10386b}.kitchen-proposal-card p{font-size:11px;line-height:1.6;color:#62718b;margin:0 0 6px}.kitchen-proposal-card small{color:#385b80;font-size:11px}
+.kitchen-proposal-tag{font-size:10px;color:#936414;background:#fff1d8;padding:4px 7px;border-radius:6px}
+.kitchen-proposals-empty{font-size:12px;color:#718199;padding:13px 0 2px}
+.kitchen-proposals-success{display:flex;align-items:center;gap:8px;background:#eaf7ef;color:#126c4d;padding:12px;border-radius:9px;margin-top:12px;font-size:12px}
+.kitchen-proposal-backdrop{position:fixed;inset:0;background:#081c3aa8;z-index:200;display:flex;justify-content:center;align-items:center;padding:20px}
+.kitchen-proposal-modal{width:min(900px,100%);max-height:94vh;overflow:auto;background:#fff;border-radius:17px;box-shadow:0 20px 80px #081a3066;color:#1a355e}
+.kitchen-proposal-modal>header{display:flex;justify-content:space-between;align-items:center;padding:20px 23px;border-bottom:1px solid #e2e8f2}
+.kitchen-proposal-modal>header h2{font-size:23px;margin:5px 0;color:#103b73}
+.kitchen-proposal-form{padding:20px 23px}
+.kitchen-proposal-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.kitchen-proposal-fields>label{font-size:12px;font-weight:700;color:#24436e;display:flex;flex-direction:column;gap:6px}
+.kitchen-proposal-fields .wide{grid-column:1/-1}
+.kitchen-proposal-fields input,.kitchen-proposal-fields select,.kitchen-proposal-fields textarea{width:100%;min-width:0;border:1px solid #cfdced;border-radius:9px;padding:11px;background:#fff;color:#17365b;font:inherit;font-size:13px;box-sizing:border-box}
+.kitchen-proposal-fields input:disabled{background:#f1f5fc}.kitchen-proposal-fields textarea{min-height:70px;resize:vertical}
+.kitchen-proposal-ingredient-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:20px 0 12px}.kitchen-proposal-ingredient-head h3,.kitchen-proposal-photo h3{display:flex;align-items:center;gap:7px;margin:0 0 5px;font-size:15px;color:#123f77}.kitchen-proposal-ingredient-head p,.kitchen-proposal-photo p{font-size:11px;color:#687c99;margin:0}
+.kitchen-proposal-ingredient{background:#f7faff;border:1px solid #dae6f3;border-radius:12px;padding:13px;margin:10px 0}
+.kitchen-proposal-stock-source{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:11px;font-size:11px;color:#63758d}.kitchen-proposal-stock-source span{padding:5px 8px;background:#fff;border-radius:6px}.kitchen-proposal-stock-source button{border:0;background:#e8f2ff;color:#164a84;display:flex;align-items:center;gap:4px;border-radius:7px;padding:7px;cursor:pointer}.kitchen-proposal-stock-source button.danger{color:#a42c39;background:#fff0f0;margin-left:auto}
+.kitchen-proposal-photo{display:flex;align-items:center;justify-content:space-between;gap:15px;border:1px dashed #b8cfe7;padding:15px;border-radius:12px;margin:18px 0}.kitchen-proposal-photo>img{height:100px;width:125px;object-fit:cover;border-radius:9px}.kitchen-proposal-photo input{margin-top:12px;max-width:100%;font-size:12px}
+.kitchen-proposal-safety{border:1px solid #dbe6f4;border-radius:12px;padding:14px;margin:0}.kitchen-proposal-safety legend{font-size:13px;font-weight:750;color:#24528c;padding:0 6px}
+.kitchen-proposal-actions{display:flex;align-items:center;justify-content:flex-end;gap:10px;margin-top:18px;flex-wrap:wrap}.kitchen-proposal-actions small{margin-right:auto;color:#697c93;font-size:11px;max-width:350px}.kitchen-proposal-error{color:#a72332;display:flex;gap:8px;align-items:center;background:#fff1f2;border-radius:8px;padding:11px;font-size:12px}
+@media(max-width:600px){.kitchen-proposal-backdrop{padding:8px}.kitchen-proposal-fields{grid-template-columns:1fr}.kitchen-proposal-ingredient-head{align-items:flex-start;flex-direction:column}.kitchen-proposal-modal>header,.kitchen-proposal-form{padding:14px}.kitchen-proposal-photo{flex-direction:column;align-items:flex-start}}

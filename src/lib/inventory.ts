@@ -25,6 +25,8 @@ export type InventoryItem = {
   minimumStock: number
   lotCode: string
   expiresAt: string
+  supplierId: string
+  origin: string
 }
 
 export type InventoryMovement = {
@@ -51,14 +53,14 @@ export type InventoryRow = InventoryItem & {
 }
 
 export const inventoryItems: InventoryItem[] = [
-  {id:'rice-an-phu',schoolId:'an-phu',schoolName:'Tiểu học An Phú',wardId:'ward-binh-hung-hoa',kitchenId:'kitchen-an-tam',kitchenName:'Bếp trung tâm An Tâm',ingredientName:'Gạo thơm',unit:'kg',openingBalance:86,minimumStock:40,lotCode:'DEMO-GAO-1810',expiresAt:'2027-03-20'},
-  {id:'chicken-an-phu',schoolId:'an-phu',schoolName:'Tiểu học An Phú',wardId:'ward-binh-hung-hoa',kitchenId:'kitchen-an-tam',kitchenName:'Bếp trung tâm An Tâm',ingredientName:'Thịt gà',unit:'kg',openingBalance:28,minimumStock:12,lotCode:'DEMO-GA-1810',expiresAt:'2026-10-20'},
-  {id:'oil-an-phu',schoolId:'an-phu',schoolName:'Tiểu học An Phú',wardId:'ward-binh-hung-hoa',kitchenId:'kitchen-an-tam',kitchenName:'Bếp trung tâm An Tâm',ingredientName:'Dầu thực vật',unit:'lít',openingBalance:34,minimumStock:10,lotCode:'DEMO-DAU-1009',expiresAt:'2027-09-10'},
-  {id:'rice-binh-an',schoolId:'binh-an',schoolName:'Mầm non Bình An',wardId:'ward-binh-hung-hoa',kitchenId:'kitchen-binh-an',kitchenName:'Bếp ăn Mầm non Bình An',ingredientName:'Gạo thơm',unit:'kg',openingBalance:48,minimumStock:24,lotCode:'DEMO-GAO-1710',expiresAt:'2027-02-28'},
-  {id:'pork-binh-an',schoolId:'binh-an',schoolName:'Mầm non Bình An',wardId:'ward-binh-hung-hoa',kitchenId:'kitchen-binh-an',kitchenName:'Bếp ăn Mầm non Bình An',ingredientName:'Thịt heo',unit:'kg',openingBalance:19,minimumStock:8,lotCode:'DEMO-HEO-1810',expiresAt:'2026-10-20'},
-  {id:'milk-binh-an',schoolId:'binh-an',schoolName:'Mầm non Bình An',wardId:'ward-binh-hung-hoa',kitchenId:'kitchen-binh-an',kitchenName:'Bếp ăn Mầm non Bình An',ingredientName:'Sữa tiệt trùng',unit:'chai',openingBalance:260,minimumStock:150,lotCode:'DEMO-SUA-1210',expiresAt:'2027-04-12'},
-  {id:'rice-an-khanh',schoolId:'an-khanh',schoolName:'THCS An Khánh',wardId:'ward-binh-hung-hoa',kitchenId:'kitchen-an-khanh',kitchenName:'Bếp ăn THCS An Khánh',ingredientName:'Gạo thơm',unit:'kg',openingBalance:68,minimumStock:32,lotCode:'DEMO-GAO-1610',expiresAt:'2027-03-12'},
-  {id:'fish-an-khanh',schoolId:'an-khanh',schoolName:'THCS An Khánh',wardId:'ward-binh-hung-hoa',kitchenId:'kitchen-an-khanh',kitchenName:'Bếp ăn THCS An Khánh',ingredientName:'Cá phi lê',unit:'kg',openingBalance:21,minimumStock:10,lotCode:'DEMO-CA-1810',expiresAt:'2026-10-19'},
+  {id:'rice-an-phu',schoolId:'an-phu',schoolName:'Tiểu học An Phú',wardId:'ward-binh-hung-hoa',kitchenId:'kitchen-an-tam',kitchenName:'Bếp trung tâm An Tâm',ingredientName:'Gạo thơm',unit:'kg',openingBalance:86,minimumStock:40,lotCode:'DEMO-GAO-1810',expiresAt:'2027-03-20',supplierId:'supplier-rice',origin:'Đồng bằng sông Cửu Long · DEMO'},
+  {id:'chicken-an-phu',schoolId:'an-phu',schoolName:'Tiểu học An Phú',wardId:'ward-binh-hung-hoa',kitchenId:'kitchen-an-tam',kitchenName:'Bếp trung tâm An Tâm',ingredientName:'Thịt gà',unit:'kg',openingBalance:28,minimumStock:12,lotCode:'DEMO-GA-1810',expiresAt:'2026-10-20',supplierId:'supplier-meat',origin:'Hóc Môn, TP.HCM · DEMO'},
+  {id:'oil-an-phu',schoolId:'an-phu',schoolName:'Tiểu học An Phú',wardId:'ward-binh-hung-hoa',kitchenId:'kitchen-an-tam',kitchenName:'Bếp trung tâm An Tâm',ingredientName:'Dầu thực vật',unit:'lít',openingBalance:34,minimumStock:10,lotCode:'DEMO-DAU-1009',expiresAt:'2027-09-10',supplierId:'supplier-kido',origin:'Việt Nam · DEMO'},
+  {id:'rice-binh-an',schoolId:'binh-an',schoolName:'Mầm non Bình An',wardId:'ward-binh-hung-hoa',kitchenId:'kitchen-binh-an',kitchenName:'Bếp ăn Mầm non Bình An',ingredientName:'Gạo thơm',unit:'kg',openingBalance:48,minimumStock:24,lotCode:'DEMO-GAO-1710',expiresAt:'2027-02-28',supplierId:'supplier-rice',origin:'Đồng bằng sông Cửu Long · DEMO'},
+  {id:'pork-binh-an',schoolId:'binh-an',schoolName:'Mầm non Bình An',wardId:'ward-binh-hung-hoa',kitchenId:'kitchen-binh-an',kitchenName:'Bếp ăn Mầm non Bình An',ingredientName:'Thịt heo',unit:'kg',openingBalance:19,minimumStock:8,lotCode:'DEMO-HEO-1810',expiresAt:'2026-10-20',supplierId:'supplier-meat',origin:'Hóc Môn, TP.HCM · DEMO'},
+  {id:'milk-binh-an',schoolId:'binh-an',schoolName:'Mầm non Bình An',wardId:'ward-binh-hung-hoa',kitchenId:'kitchen-binh-an',kitchenName:'Bếp ăn Mầm non Bình An',ingredientName:'Sữa tiệt trùng',unit:'chai',openingBalance:260,minimumStock:150,lotCode:'DEMO-SUA-1210',expiresAt:'2027-04-12',supplierId:'supplier-kido',origin:'Việt Nam · DEMO'},
+  {id:'rice-an-khanh',schoolId:'an-khanh',schoolName:'THCS An Khánh',wardId:'ward-binh-hung-hoa',kitchenId:'kitchen-an-khanh',kitchenName:'Bếp ăn THCS An Khánh',ingredientName:'Gạo thơm',unit:'kg',openingBalance:68,minimumStock:32,lotCode:'DEMO-GAO-1610',expiresAt:'2027-03-12',supplierId:'supplier-rice',origin:'Đồng bằng sông Cửu Long · DEMO'},
+  {id:'fish-an-khanh',schoolId:'an-khanh',schoolName:'THCS An Khánh',wardId:'ward-binh-hung-hoa',kitchenId:'kitchen-an-khanh',kitchenName:'Bếp ăn THCS An Khánh',ingredientName:'Cá phi lê',unit:'kg',openingBalance:21,minimumStock:10,lotCode:'DEMO-CA-1810',expiresAt:'2026-10-19',supplierId:'supplier-meat',origin:'TP.HCM · DEMO'},
 ]
 
 const seedMovements: InventoryMovement[] = [
@@ -85,6 +87,49 @@ function storedMovements(): InventoryMovement[] {
 }
 
 function allMovements() { return [...seedMovements, ...storedMovements()] }
+
+/**
+ * Allowlist tối thiểu cho trang QR công khai. Chỉ trả dữ liệu tiếp nhận của
+ * đúng nguyên liệu đã liên kết với bữa ăn; không trả actor, ghi chú, số lượng
+ * tồn hoặc tham chiếu chứng từ nội bộ.
+ */
+const demoMealInventoryLinks: Record<string, readonly string[]> = {
+  'rice-an-phu': ['Cơm trắng', 'Gạo tẻ'],
+  'chicken-an-phu': ['Gà kho gừng', 'Mì xào gà', 'Bún gà rau xanh', 'Cháo gà rau củ'],
+  'rice-binh-an': ['Cơm trắng', 'Gạo tẻ'],
+  'pork-binh-an': ['Thịt heo kho trứng', 'Bún thịt rau xanh', 'Cháo thịt bằm bí đỏ'],
+  'milk-binh-an': ['Sữa', 'Sữa tiệt trùng', 'Bánh mềm và sữa', 'Bánh chuối và sữa'],
+  'rice-an-khanh': ['Cơm trắng', 'Gạo tẻ'],
+  'fish-an-khanh': ['Cá sốt cà chua', 'Cá thu kho thơm', 'Cá phi lê'],
+}
+
+export function publicIngredientReceivingTrace(input: {
+  itemIds: readonly string[]
+  ingredientNames: readonly string[]
+  schoolId: string
+  serviceDate: string
+}) {
+  const allowedIds = new Set(input.itemIds)
+  const mealNames = new Set(input.ingredientNames)
+  for (const item of inventoryItems.filter(value => value.schoolId === input.schoolId)) {
+    if (demoMealInventoryLinks[item.id]?.some(name => mealNames.has(name))) allowedIds.add(item.id)
+  }
+  return allMovements()
+    .filter(movement => allowedIds.has(movement.itemId) && movement.type === 'RECEIPT' && movement.occurredAt.slice(0, 10) === input.serviceDate)
+    .map(movement => {
+      const item = inventoryItems.find(value => value.id === movement.itemId)
+      return item ? {
+        itemId: item.id,
+        ingredientName: item.ingredientName,
+        lotCode: item.lotCode,
+        receivedAt: movement.occurredAt,
+        expiresAt: item.expiresAt,
+        demo: true as const,
+      } : null
+    })
+    .filter((value): value is NonNullable<typeof value> => value !== null)
+    .sort((a, b) => a.receivedAt.localeCompare(b.receivedAt))
+}
 
 function mayRead(actor:InventoryActor,item:InventoryItem) {
   return (actor.role==='school_board'&&actor.schoolId===item.schoolId)||(actor.role==='culture_social_office'&&actor.wardId===item.wardId)

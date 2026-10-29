@@ -97,4 +97,12 @@ Response công khai tối thiểu: trạng thái token, trường nhận, bếp 
 
 ## Trạng thái hiện tại trong frontend DEMO
 
-Vertical slice hiện tại phát hành token bằng Web Crypto, lưu localStorage, tạo nhãn QR thật có thể in, cho phép thu hồi/cấp lại và có trang `/truy-xuat-suat/:token`. Luồng xuất bếp đã kiểm tra độ phủ QR. Đây không thay thế transaction, RBAC, rate limit, audit storage và public API phía server nêu trên.
+Vertical slice hiện tại phát hành token bằng Web Crypto, lưu localStorage, tạo nhãn QR thật có thể in, cho phép thu hồi/cấp lại và có trang `/truy-xuat-suat/:token`. Luồng xuất bếp đã kiểm tra độ phủ QR.
+
+- Bếp trung tâm được gán là vai trò duy nhất phát hành, in và thu hồi lô QR.
+- BGH đúng trường có màn đối soát chỉ đọc, xem từng QR và tự nhận thay đổi phát hành/thu hồi giữa các tab cùng trình duyệt qua `storage` event; cập nhật trong cùng tab dùng custom event.
+- Scope đồng bộ là tổ hợp `schoolId + kitchenId + serviceDate + mealType`, vì vậy QR của trường/ngày/bữa khác không được trộn vào danh sách BGH.
+- Khi mốc `READY` đã được BGH xác nhận, giao diện Giám sát & an toàn hiển thị QR đại diện suất `#001` và tổng số QR đang hoạt động. Nếu bếp chưa phát hành, giao diện chỉ báo trạng thái chờ, không tự sinh token dưới quyền phụ huynh.
+- Trang quét công khai hiển thị ảnh và serial suất ăn, thực đơn và định lượng, nhà cung cấp/lô nguyên liệu, thời điểm nhập kho, bắt đầu chế biến, xuất bếp/bàn giao, đến trường, ra món, READY, hạn phục vụ được đơn vị ghi nhận, kết quả kiểm tra công khai và ảnh READY đã được duyệt. Mốc thiếu dữ liệu hiển thị “Chưa ghi nhận”; hạn phục vụ DEMO không được diễn giải thành thời hạn pháp lý hoặc kết luận ATTP. Ảnh chờ duyệt, hóa đơn, chứng từ riêng tư và PII vẫn bị loại khỏi response/view.
+
+Đây vẫn là cơ chế DEMO trong một trình duyệt, không phải đồng bộ đa thiết bị. Triển khai thật phải thay localStorage/event bằng API và database transaction, đồng thời giữ nguyên RBAC, scope record-level, idempotency, audit append-only, rate limit và allowlist public response nêu trên.

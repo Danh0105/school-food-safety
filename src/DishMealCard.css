@@ -1,0 +1,70 @@
+/* React Bits SpotlightCard: readable menu cards in a dense seven-day calendar. */
+.boarding-menu-manager .rb-dish-spotlight.spotlight-card{
+  min-width:0; padding:8px; display:flex; flex-direction:column; gap:6px;
+  border:1px solid #dbe5ef; border-radius:13px; background:#fff;
+  box-shadow:0 2px 8px rgba(19,42,82,.045); color:#10213b;
+  transform:none; transition:border-color .18s ease,box-shadow .18s ease,transform .18s ease;
+}
+.boarding-menu-manager:not(.public-view) .rb-dish-spotlight.spotlight-card{height:242px}
+.boarding-menu-manager.public-view .rb-dish-spotlight.spotlight-card{height:244px}
+.boarding-menu-manager .rb-dish-spotlight.spotlight-card:hover,
+.boarding-menu-manager .rb-dish-spotlight.spotlight-card:focus-within{
+  border-color:#98b9e2; box-shadow:0 6px 18px rgba(28,74,128,.12); transform:translateY(-1px);
+}
+.rb-dish-spotlight.spotlight-card>.spotlight-card__light{z-index:0; pointer-events:none}
+.rb-dish-spotlight.spotlight-card>.spotlight-card__border,
+.rb-dish-spotlight.spotlight-card>.spotlight-card__edge{pointer-events:none}
+.rb-dish-spotlight.spotlight-card>.dish-card-open,
+.rb-dish-spotlight.spotlight-card>.dish-card-meta,
+.rb-dish-spotlight.spotlight-card>.dish-card-bottom{position:relative;z-index:1}
+.boarding-menu-manager .rb-dish-spotlight .dish-card-open{
+  display:flex; flex-direction:column; gap:6px; width:100%; border:0; padding:0;
+  text-align:left; background:transparent; color:inherit; cursor:pointer; border-radius:8px;
+}
+.boarding-menu-manager.public-view .rb-dish-spotlight .dish-card-open{height:158px;flex:none}
+.rb-dish-spotlight .dish-card-main{display:grid;grid-template-columns:49px minmax(0,1fr);align-items:start;gap:8px;min-width:0;width:100%}
+.boarding-menu-manager.public-view .rb-dish-spotlight .dish-card-main{height:131px;flex:none}
+.boarding-menu-manager:not(.public-view) .rb-dish-spotlight .dish-card-main{min-height:74px}
+.boarding-menu-manager .rb-dish-spotlight .calendar-dish-photo{
+  display:block; width:49px; height:56px; border-radius:9px; object-fit:cover;
+  background:#eff7ea; border:1px solid #e3ebdd; margin:0; grid-column:auto; grid-row:auto;
+}
+.rb-dish-spotlight .dish-card-text{display:flex;flex-direction:column;align-items:flex-start;gap:3px;min-width:0}
+.rb-dish-spotlight .dish-card-number{display:inline-flex;font-size:9px;font-weight:800;letter-spacing:.055em;color:#047857;background:#eafaf2;border-radius:5px;padding:2px 5px}
+.rb-dish-spotlight .dish-card-name{display:block;font-size:12px;line-height:1.38;letter-spacing:-.01em;font-weight:750;color:#132842;overflow-wrap:break-word}
+.boarding-menu-manager.public-view .rb-dish-spotlight .dish-card-name{display:-webkit-box;overflow:hidden;-webkit-box-orient:vertical;-webkit-line-clamp:3;line-clamp:3}
+.rb-dish-spotlight .dish-card-open:hover .dish-card-name{text-decoration:underline;text-underline-offset:2px;color:#0757ad}
+.rb-dish-spotlight .dish-card-weight{display:flex;align-items:center;gap:5px;min-height:21px;font-weight:700;font-size:11px;color:#164e63}
+.rb-dish-spotlight .dish-card-weight svg{flex:none;color:#0e7490}
+.rb-dish-spotlight .dish-card-weight .dish-card-eye{margin-left:auto;color:#7b8ca5}
+.rb-dish-spotlight .dish-card-meta{display:flex;justify-content:space-between;gap:4px;flex-wrap:wrap;border-top:1px solid #edf0f4;padding-top:6px}
+.boarding-menu-manager.public-view .rb-dish-spotlight .dish-card-meta{min-height:21px;flex:none}
+.rb-dish-spotlight .dish-card-meta>span{display:inline-flex;align-items:center;gap:3px;color:#52647c;font-size:10px;line-height:1.35;font-weight:650;white-space:nowrap}
+.rb-dish-spotlight .dish-card-meta svg{color:#59728b;flex:none}
+.rb-dish-spotlight .dish-card-bottom{display:flex;align-items:center;justify-content:space-between;gap:6px;min-height:21px}
+.boarding-menu-manager.public-view .rb-dish-spotlight .dish-card-bottom{min-height:33px;flex:none}
+.boarding-menu-manager:not(.public-view) .rb-dish-spotlight .dish-choice-count{display:flex;min-height:28px;align-items:center;justify-content:center;margin:0;text-align:center}
+.boarding-menu-manager:not(.public-view) .rb-dish-spotlight .dish-card-bottom{min-height:54px;align-items:flex-end;margin-top:auto}
+.boarding-menu-manager:not(.public-view) .rb-dish-spotlight .dish-card-status{flex:0 0 45px;min-height:52px;justify-content:center;text-align:center}
+.rb-dish-spotlight .dish-card-status{display:inline-flex;align-items:center;gap:4px;color:#996525;background:#fff6e8;border:1px solid #f4e2be;padding:4px 6px;border-radius:6px;font-weight:650;font-size:9px;line-height:1.25}
+.rb-dish-spotlight .dish-card-status.reported{color:#17627c;background:#e9f7fc;border-color:#b8e3f1}
+.rb-dish-spotlight .dish-card-status svg{flex:none}
+.boarding-menu-manager .rb-dish-spotlight .dish-actions{position:static;display:flex;opacity:1;gap:3px;flex:none}
+.boarding-menu-manager .rb-dish-spotlight .dish-actions button{display:grid;place-items:center;width:26px;height:26px;padding:0}
+.boarding-menu-manager .rb-dish-spotlight .dish-card-open:focus-visible,
+.boarding-menu-manager .rb-dish-spotlight .dish-actions button:focus-visible{outline:3px solid #60a5fa;outline-offset:2px}
+@media(max-width:760px){.boarding-menu-manager .rb-dish-spotlight.spotlight-card{padding:9px}.rb-dish-spotlight .dish-card-name{font-size:13px}.rb-dish-spotlight .dish-card-meta>span{font-size:10px}}
+@media(prefers-reduced-motion:reduce){
+  .boarding-menu-manager .rb-dish-spotlight.spotlight-card{transition:none}
+  .boarding-menu-manager .rb-dish-spotlight.spotlight-card:hover,
+  .boarding-menu-manager .rb-dish-spotlight.spotlight-card:focus-within{transform:none}
+  .rb-dish-spotlight>.spotlight-card__light,.rb-dish-spotlight>.spotlight-card__edge{display:none}
+}
+
+/* Chọn/đổi món trên chính card bữa trưa của phụ huynh; không ảnh hưởng nút xem chi tiết. */
+.boarding-menu-manager .rb-dish-spotlight.dish-parent-chosen.spotlight-card {border:2px solid #158464;box-shadow:0 0 0 2px rgba(16,155,111,.1),0 4px 12px rgba(28,74,128,.08)}
+.boarding-menu-manager .rb-dish-spotlight .dish-parent-pick{position:relative;z-index:2;display:flex;justify-content:center;align-items:center;gap:5px;width:100%;min-height:32px;padding:5px 7px;border:1px solid #a8c9e9;border-radius:8px;background:#eaf3ff;color:#1358a0;font-size:11px;font-weight:800;line-height:1.25;cursor:pointer}
+.boarding-menu-manager .rb-dish-spotlight .dish-parent-pick.selected{background:#e3f7ed;border-color:#68c3a2;color:#087552}
+.boarding-menu-manager .rb-dish-spotlight .dish-parent-pick:not(.selected):hover{background:#d7eaff;border-color:#5b98d9}
+.boarding-menu-manager .rb-dish-spotlight .dish-parent-pick:focus-visible{outline:3px solid #2563eb;outline-offset:2px}
+@media(prefers-reduced-motion:reduce){.boarding-menu-manager .rb-dish-spotlight .dish-parent-pick{transition:none}}

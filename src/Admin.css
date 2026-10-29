@@ -23,3 +23,11 @@
 .sync-status.pending{background:var(--warning-soft);color:var(--warning)}
 .sync-status.missing{background:var(--danger-soft);color:var(--danger)}
 [data-theme=dark] .admin-status,[data-theme=dark] .local-toast{color:var(--success)}
+
+/* Unified public operating journal across all five workspaces. */
+.operation-shared-public{margin:18px 0 24px;min-width:0}
+.operation-shared-public .shared-operation-journal{box-shadow:none}
+.admin-overview-journey{margin-top:20px}
+.operation-internal-heading{font-size:17px;font-weight:750;margin:26px 0 7px}
+.operation-internal-note{color:var(--muted);font-size:12px;line-height:1.6;margin:0 0 15px}
+@media(max-width:760px){.operation-shared-public{margin:14px 0 20px}.operation-internal-heading{margin-top:20px}}

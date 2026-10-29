@@ -477,3 +477,117 @@ form .feedback-photo-picker.disabled{cursor:not-allowed;opacity:.6}
 [data-theme=dark] .segmented a.selected{background:#355fc9;color:#fff}
 [data-theme=dark] .demo-pill{color:#f4d586}
 .route-content{animation:route-content-enter .18s ease-out}@keyframes route-content-enter{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}
+
+/* Bộ chọn ba bữa nằm trong thẻ Thực đơn hôm nay, không tạo thêm một khối card độc lập. */
+.meal-session-switch{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:0 20px 14px;padding:5px;background:var(--surface-alt);border:1px solid var(--border);border-radius:13px}
+.meal-session-switch button{display:grid;grid-template-columns:auto 1fr;align-items:center;gap:1px 8px;min-width:0;min-height:56px;padding:8px 10px;text-align:left;border:1px solid transparent;border-radius:10px;color:var(--muted)}
+.meal-session-switch button>span{font-size:12px;font-weight:750;color:var(--text);white-space:nowrap}
+.meal-session-switch button>small{grid-column:2;font-size:9px;font-weight:650;white-space:nowrap;color:var(--muted)}
+.meal-session-switch button.selected{background:var(--surface);border-color:var(--border);color:var(--primary);box-shadow:0 3px 12px #1737690d}
+.meal-session-switch button.selected>span{color:var(--primary)}
+[data-theme=dark] .meal-session-switch button.selected{box-shadow:0 5px 15px #0003}
+@media(max-width:600px){
+ .meal-session-switch{gap:5px;margin:0 14px 12px;padding:4px}
+ .meal-session-switch button{display:flex;flex-direction:column;justify-content:center;gap:3px;min-height:62px;padding:7px 4px;text-align:center}
+ .meal-session-switch button>span{font-size:12px}
+ .meal-session-switch button>small{font-size:8px}
+}
+
+/* Tổng quan phụ huynh: ảnh minh họa tại mốc sẵn sàng phục vụ. */
+.journey-ready-photo{
+  display:flex;flex-direction:column;gap:6px;text-align:left;border:1px solid var(--border);
+  border-radius:12px;padding:6px;margin-top:10px;max-width:190px;
+  background:var(--surface);cursor:pointer;transition:border-color .18s ease,box-shadow .18s ease;
+}
+.journey-ready-photo:hover{border-color:var(--primary);box-shadow:0 4px 16px #1e3a8a1b}
+.journey-ready-photo:focus-visible{outline:3px solid var(--primary);outline-offset:2px}
+.journey-ready-photo img{width:176px;max-width:100%;height:105px;object-fit:cover;border-radius:8px;background:var(--surface-alt)}
+.journey-ready-photo span{display:flex;align-items:center;gap:5px;color:var(--muted);font-size:10px;font-weight:650;line-height:1.35}
+.journey-ready-evidence{display:flex;align-items:stretch;flex-wrap:wrap;gap:10px;margin-top:10px}
+.journey-ready-evidence .journey-ready-photo{margin-top:0}
+.journey-ready-qr{display:flex;align-items:center;gap:10px;min-width:280px;padding:8px;border:1px solid color-mix(in srgb,var(--primary) 24%,var(--border));border-radius:12px;background:color-mix(in srgb,var(--green-soft) 55%,var(--surface));color:var(--text);transition:border-color .18s ease,box-shadow .18s ease}
+.journey-ready-qr:hover{border-color:var(--primary);box-shadow:0 4px 16px #1e3a8a16}
+.journey-ready-qr:focus-visible{outline:3px solid var(--primary);outline-offset:2px}
+.journey-ready-qr-code{display:grid;place-items:center;flex:0 0 auto;padding:4px;border-radius:8px;background:#fff}
+.journey-ready-qr-code svg{width:88px;height:88px}
+.journey-ready-qr-copy{display:flex;flex-direction:column;align-items:flex-start;min-width:0}
+.journey-ready-qr-copy small{color:var(--primary);font-size:9px;font-style:normal;font-weight:800;letter-spacing:.05em}
+.journey-ready-qr-copy strong{margin-top:4px;font-size:15px}
+.journey-ready-qr-copy em{margin-top:2px;color:var(--muted);font-size:10px;font-style:normal;font-weight:650}
+.journey-ready-qr-copy>span{display:flex;align-items:center;gap:4px;margin-top:8px;color:var(--primary);font-size:10px;font-weight:750;line-height:1.35}
+.journey-ready-qr-empty{display:flex;align-items:flex-start;gap:9px;max-width:330px;padding:12px;border:1px dashed var(--border);border-radius:12px;background:var(--surface-alt);color:var(--muted)}
+.journey-ready-qr-empty>svg{flex:0 0 auto;color:var(--muted)}
+.journey-ready-qr-empty span{display:flex;flex-direction:column;gap:3px}
+.journey-ready-qr-empty strong{color:var(--text);font-size:11px}
+.journey-ready-qr-empty small{font-size:10px;line-height:1.45}
+.empty-menu-note{font-size:12px;color:var(--muted);line-height:1.5}
+@media(max-width:600px){.journey-ready-evidence{display:grid;grid-template-columns:1fr;max-width:290px}.journey-ready-photo{max-width:100%}.journey-ready-photo img{width:100%;height:128px}.journey-ready-qr{min-width:0;width:100%}.journey-ready-qr-code svg{width:80px;height:80px}}
+@media(prefers-reduced-motion:reduce){.journey-ready-photo{transition:none!important}}
+
+/* Giám sát & an toàn — bộ ảnh chung cho năm vai trò, theo bản công khai phụ huynh. */
+.supervision-photo-section{padding-bottom:22px}
+.supervision-photo-section .card-header{margin-bottom:18px}
+.supervision-photo-grid{display:grid;grid-template-columns:1.35fr 1fr 1fr;gap:14px;margin:0 24px}
+.supervision-photo-card{text-align:left;display:flex;flex-direction:column;min-width:0;overflow:hidden;padding:0;background:var(--surface);border:1px solid var(--border);border-radius:16px;color:var(--text);cursor:pointer;transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease}
+.supervision-photo-card:hover{transform:translateY(-3px);border-color:#96b6e0;box-shadow:0 10px 26px #143b6d15}
+.supervision-photo-card:focus-visible{outline:3px solid var(--primary);outline-offset:3px}
+.supervision-photo-frame{position:relative;width:100%;height:150px;overflow:hidden;display:block;background:#e9f2fb}
+.supervision-photo-card:first-child .supervision-photo-frame{height:150px}
+.supervision-photo-frame img{width:100%;height:100%;object-fit:cover;display:block}
+.supervision-photo-badge{position:absolute;bottom:9px;left:9px;display:inline-block;padding:6px 9px;background:#103667e8;color:#fff;border-radius:7px;font-size:9px;line-height:1.2;letter-spacing:.03em;font-weight:750}
+.supervision-photo-body{display:flex;flex-direction:column;gap:7px;padding:15px;flex:1;min-width:0}
+.supervision-photo-body strong{font-size:14px;line-height:1.35;color:var(--text)}
+.supervision-photo-body small{font-size:11px;line-height:1.6;color:var(--muted)}
+.supervision-photo-link{margin-top:auto;color:var(--primary);font-size:11px;font-weight:750;display:flex;gap:5px;align-items:center}
+.supervision-media-note{display:flex;align-items:start;gap:9px;margin:15px 24px 0;font-size:11px;line-height:1.6;color:var(--muted)}
+.supervision-media-note svg{flex-shrink:0;margin-top:1px}
+@media(max-width:900px){.supervision-photo-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.supervision-photo-card:first-child{grid-column:1/-1}.supervision-photo-frame,.supervision-photo-card:first-child .supervision-photo-frame{height:160px}}
+@media(max-width:600px){.supervision-photo-section{padding-bottom:16px}.supervision-photo-grid{margin:0 15px;gap:9px}.supervision-photo-card{border-radius:12px}.supervision-photo-body{padding:11px;gap:6px}.supervision-photo-body strong{font-size:12px}.supervision-photo-body small{font-size:10px}.supervision-photo-frame{height:115px}.supervision-photo-card:first-child .supervision-photo-frame{height:185px}.supervision-media-note{margin:13px 15px 0;font-size:10px}.supervision-photo-badge{font-size:8px;padding:5px 6px}}
+@media(prefers-reduced-motion:reduce){.supervision-photo-card{transition:none}.supervision-photo-card:hover{transform:none}}
+
+/* Nhật ký vận hành và Tổng quan chia sẻ cùng JourneyProgress và ảnh mốc READY. */
+.journey-progress{display:flex;flex-direction:column;min-width:0}
+.journey-progress .journey-footer{margin-top:0;padding-bottom:12px}
+.detail-section .journey-progress{padding-bottom:12px}
+.detail-section .journey-progress .journey-summary{margin:0 24px 20px}
+.detail-section .journey-progress .timeline.compact{padding:0 25px 7px}
+.detail-section .journey-progress .journey-footer{margin-left:24px;margin-right:24px}
+@media(max-width:760px){
+ .detail-section .journey-progress .journey-summary{margin:0 17px 19px}
+ .detail-section .journey-progress .timeline.compact{padding-left:19px;padding-right:19px}
+ .detail-section .journey-progress .journey-footer{margin-left:17px;margin-right:17px}
+}
+
+/* Shared public journal is reused in every role: same styles and data. */
+.shared-journal-context{font-size:11px;line-height:1.6;margin-top:5px}
+.shared-operation-journal{min-width:0}
+.shared-operation-journal .journey-progress{padding-bottom:12px}
+
+/* Định lượng tại phần trống của thẻ Thực đơn hôm nay – chỉ dùng dữ liệu thực đơn BGH. */
+.meal-portion-panel{margin:7px 0 20px;padding:16px 17px;border-radius:13px;border:1px solid #dce4f1;background:#f7f9fe;color:#152b51}
+.meal-portion-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:13px}
+.meal-portion-heading-text{display:flex;align-items:center;gap:10px;min-width:0}
+.meal-portion-heading-text .section-kicker{color:#536fa4;font-size:9px;margin-bottom:3px}
+.meal-portion-heading h3{font-size:14px;font-weight:750;line-height:1.4;color:#1b3975}
+.meal-portion-symbol{width:33px;height:33px;flex:0 0 33px;border-radius:9px;background:#e5edfd;color:#2d5cb5;display:grid;place-items:center}
+.meal-portion-demo{border:1px solid #f1d8a5;background:#fff5df;color:#8d641e;border-radius:999px;font-weight:700;font-size:10px;padding:5px 8px;white-space:nowrap}
+.meal-portion-dishes{display:grid;gap:10px}
+.meal-portion-dish{min-width:0;background:white;border:1px solid #e0e7f1;border-radius:10px;overflow:hidden}
+.meal-portion-dish-head{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;padding:11px 12px;background:#eef3fc}
+.meal-portion-dish-head>strong{color:#163c7d;font-weight:750;font-size:12px}
+.meal-portion-metrics{display:flex;flex-wrap:wrap;gap:5px}
+.meal-portion-metrics span{border:1px solid #dbe5f4;border-radius:6px;background:#fff;color:#52698d;font-size:10px;font-weight:650;padding:4px 6px;font-variant-numeric:tabular-nums}
+.meal-portion-table-wrap{overflow-x:auto}
+.meal-portion-table{border-collapse:collapse;width:100%;font-size:11px;font-variant-numeric:tabular-nums}
+.meal-portion-table th,.meal-portion-table td{padding:9px 12px;text-align:left;border-bottom:1px solid #edf1f6;line-height:1.45}
+.meal-portion-table tr:last-child th,.meal-portion-table tr:last-child td{border-bottom:0}
+.meal-portion-table thead th{color:#627696;font-weight:700;background:#fcfdff;font-size:10px}
+.meal-portion-table tbody th{color:#273957;font-weight:650}
+.meal-portion-table td:nth-child(2),.meal-portion-table td:nth-child(3),.meal-portion-table thead th:nth-child(2),.meal-portion-table thead th:nth-child(3){text-align:right;white-space:nowrap}
+.meal-portion-table tbody td:last-child{color:#1e559a;font-weight:750}
+.meal-portion-empty{padding:14px;color:#687a97;font-size:12px}
+.meal-portion-disclaimer{margin-top:12px;color:#53647f;line-height:1.7;font-size:10px}
+[data-theme=dark] .meal-portion-disclaimer{color:#b8c1d3}
+@media(max-width:760px){.meal-portion-panel{padding:13px 11px;margin:6px 0 16px}.meal-portion-heading{flex-wrap:wrap}.meal-portion-heading h3{font-size:13px}.meal-portion-dish-head{align-items:flex-start}.meal-portion-table th,.meal-portion-table td{padding:9px 7px}.meal-portion-table{font-size:10px}}
+
+.meal-portion-ingredient-button{background:transparent;border:0;color:#174e87;font:inherit;font-weight:750;cursor:pointer;display:inline-flex;align-items:center;gap:5px;padding:5px;border-radius:6px;text-align:left}.meal-portion-ingredient-button:hover,.meal-portion-ingredient-button:focus-visible{background:#e9f3ff;text-decoration:underline}.meal-portion-ingredient-button svg:last-child{color:#7c97b6}

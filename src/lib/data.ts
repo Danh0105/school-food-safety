@@ -1,3 +1,7 @@
+import readyServingDemo from '../assets/ready-service-demo.jpg'
+import { boardingMenuRepository, gradeForSchool } from './boardingMenu'
+import type { BoardingMealType } from './boardingMenu'
+import { dishImage } from './dishImages'
 import { canViewUnconfirmedMealPhotos } from '../../packages/domain/policy'
 import type { Actor, MealPhotoScope } from '../../packages/domain/policy'
 export type School = { id: string; name: string; address: string; mode: 'ON_SITE' | 'CENTRAL_KITCHEN' }
@@ -11,11 +15,13 @@ export type MealEvent = {
   photos: string[]
   hasReportedPhotos: boolean
 }
-export type IngredientPortion = { name: string; amount: number; unit: 'g' | 'ml' }
+export type IngredientPortion = { name: string; amount: number; unit: 'g' | 'ml'; inventoryItemId?: string; supplier?: string; lotCode?: string; origin?: string }
 export type NutritionEstimate = { energyKcal: number; proteinGrams: number; carbohydrateGrams: number; fatGrams: number }
 export type DishDetail = {
   name: string
   servingWeightGrams: number | null
+  /** Số suất dự kiến riêng của món, lấy từ thực đơn Ban Giám hiệu. */
+  expectedServings: number
   ingredients: IngredientPortion[]
   nutrition: NutritionEstimate | null
   verification: 'estimated' | 'unverified'
@@ -32,7 +38,7 @@ export type PublicInspection = {
   findingCount: number
   outcome: 'follow_up_required' | 'no_follow_up'
 }
-export type DayData = { servings: number; suppliers: number; dishes: string[]; dishDetails: DishDetail[]; events: MealEvent[]; kitchen: string; photo: string; updatedAt: string; transportDistanceKm: number | null; transportDurationMinutes: number | null; publicInspection: PublicInspection | null }
+export type DayData = { servings: number; suppliers: number; dishes: string[]; dishDetails: DishDetail[]; events: MealEvent[]; kitchen: string; photo: string; updatedAt: string; transportDistanceKm: number | null; transportDurationMinutes: number | null; publicInspection: PublicInspection | null; /** Hạn phục vụ do đơn vị ghi nhận; không được suy diễn thành hạn dùng pháp lý. */ mealUseByAt: string | null }
 export type KitchenDocumentStatus = 'valid' | 'expiring' | 'missing' | 'not_applicable'
 export type KitchenDocumentCategory = 'legal' | 'people' | 'facility' | 'operations'
 export type KitchenDocument = {
@@ -86,9 +92,7 @@ export const schools: School[] = [
   { id: 'binh-an', name: 'Mầm non Bình An', address: 'Phường Bình Hưng Hoà · Thành phố Hồ Chí Minh', mode: 'ON_SITE' },
   { id: 'an-khanh', name: 'THCS An Khánh', address: 'Phường Bình Hưng Hoà · Thành phố Hồ Chí Minh', mode: 'ON_SITE' },
 ]
-export const foodPhoto = '/meal-demo.jpg'
-/** Ảnh DEMO do người dùng cung cấp, chỉ gắn với mốc READY. */
-export const readyMealPhoto = '/meal-ready-demo.webp'
+export const foodPhoto = readyServingDemo
 export const publicTraceLots: PublicTraceLot[] = [
   {
     id:'rice-demo-01',ingredient:'Gạo thơm',supplier:'HTX Nông nghiệp An Phú',lotCode:'DEMO-GAO-1810',origin:'Vùng nguyên liệu minh họa · Đồng bằng sông Cửu Long',producedAt:'2026-09-28',expiresAt:'2027-03-28',receivedAt:'2026-10-17T06:35:00+07:00',receivingSummary:'Bao bì nguyên vẹn; số lượng giao nhận đã được ghi nhận trong phiếu DEMO.',linkedDish:'Cơm trắng',documents:[
@@ -115,30 +119,6 @@ export const publicTraceLots: PublicTraceLot[] = [
     ],
   },
 ]
-const dishes = [ ['Cơm trắng', 'Gà kho gừng', 'Canh bí đỏ thịt bằm', 'Rau cải xào', 'Thanh long'], ['Cơm trắng', 'Thịt heo kho trứng', 'Canh rau ngót', 'Bông cải luộc', 'Chuối chín'], ['Cơm trắng', 'Cá sốt cà chua', 'Canh củ quả', 'Rau muống xào', 'Dưa hấu'] ]
-/** Thực đơn DEMO mặc định theo thứ trong tuần khi trường chưa lưu bản nháp; dùng chung cho mọi chế độ xem. */
-export const plannedDishes = (date: string): string[] => [...dishes[new Date(`${date}T12:00:00`).getDay() % 3]!]
-type DishEstimate = Omit<DishDetail, 'name' | 'verification'>
-const dishEstimates: Record<string, DishEstimate> = {
-  'Cơm trắng': { servingWeightGrams: 150, ingredients: [{ name: 'Gạo tẻ', amount: 65, unit: 'g' }, { name: 'Nước', amount: 85, unit: 'ml' }], nutrition: { energyKcal: 195, proteinGrams: 4, carbohydrateGrams: 43, fatGrams: 0.5 } },
-  'Gà kho gừng': { servingWeightGrams: 85, ingredients: [{ name: 'Thịt gà', amount: 70, unit: 'g' }, { name: 'Gừng', amount: 3, unit: 'g' }, { name: 'Nước kho và gia vị', amount: 12, unit: 'g' }], nutrition: { energyKcal: 150, proteinGrams: 17, carbohydrateGrams: 4, fatGrams: 7 } },
-  'Canh bí đỏ thịt bằm': { servingWeightGrams: 180, ingredients: [{ name: 'Bí đỏ', amount: 45, unit: 'g' }, { name: 'Thịt heo bằm', amount: 15, unit: 'g' }, { name: 'Nước dùng', amount: 120, unit: 'ml' }], nutrition: { energyKcal: 55, proteinGrams: 4, carbohydrateGrams: 7, fatGrams: 2 } },
-  'Rau cải xào': { servingWeightGrams: 70, ingredients: [{ name: 'Rau cải', amount: 62, unit: 'g' }, { name: 'Dầu thực vật', amount: 5, unit: 'g' }, { name: 'Tỏi và gia vị', amount: 3, unit: 'g' }], nutrition: { energyKcal: 58, proteinGrams: 2, carbohydrateGrams: 4, fatGrams: 4 } },
-  'Thanh long': { servingWeightGrams: 100, ingredients: [{ name: 'Thanh long', amount: 100, unit: 'g' }], nutrition: { energyKcal: 50, proteinGrams: 1, carbohydrateGrams: 12, fatGrams: 0 } },
-  'Thịt heo kho trứng': { servingWeightGrams: 100, ingredients: [{ name: 'Thịt nạc heo', amount: 60, unit: 'g' }, { name: 'Trứng', amount: 30, unit: 'g' }, { name: 'Nước kho và gia vị', amount: 10, unit: 'g' }], nutrition: { energyKcal: 205, proteinGrams: 18, carbohydrateGrams: 4, fatGrams: 13 } },
-  'Canh rau ngót': { servingWeightGrams: 180, ingredients: [{ name: 'Rau ngót', amount: 40, unit: 'g' }, { name: 'Thịt heo bằm', amount: 15, unit: 'g' }, { name: 'Nước dùng', amount: 125, unit: 'ml' }], nutrition: { energyKcal: 45, proteinGrams: 4, carbohydrateGrams: 4, fatGrams: 2 } },
-  'Bông cải luộc': { servingWeightGrams: 70, ingredients: [{ name: 'Bông cải', amount: 70, unit: 'g' }], nutrition: { energyKcal: 24, proteinGrams: 2, carbohydrateGrams: 4, fatGrams: 0 } },
-  'Chuối chín': { servingWeightGrams: 80, ingredients: [{ name: 'Chuối', amount: 80, unit: 'g' }], nutrition: { energyKcal: 71, proteinGrams: 1, carbohydrateGrams: 18, fatGrams: 0 } },
-  'Cá sốt cà chua': { servingWeightGrams: 90, ingredients: [{ name: 'Cá phi lê', amount: 65, unit: 'g' }, { name: 'Cà chua', amount: 20, unit: 'g' }, { name: 'Dầu và gia vị', amount: 5, unit: 'g' }], nutrition: { energyKcal: 135, proteinGrams: 15, carbohydrateGrams: 4, fatGrams: 6 } },
-  'Canh củ quả': { servingWeightGrams: 180, ingredients: [{ name: 'Củ quả theo mùa', amount: 60, unit: 'g' }, { name: 'Nước dùng', amount: 120, unit: 'ml' }], nutrition: { energyKcal: 38, proteinGrams: 1, carbohydrateGrams: 8, fatGrams: 0 } },
-  'Rau muống xào': { servingWeightGrams: 70, ingredients: [{ name: 'Rau muống', amount: 62, unit: 'g' }, { name: 'Dầu thực vật', amount: 5, unit: 'g' }, { name: 'Tỏi và gia vị', amount: 3, unit: 'g' }], nutrition: { energyKcal: 57, proteinGrams: 2, carbohydrateGrams: 4, fatGrams: 4 } },
-  'Dưa hấu': { servingWeightGrams: 100, ingredients: [{ name: 'Dưa hấu', amount: 100, unit: 'g' }], nutrition: { energyKcal: 30, proteinGrams: 1, carbohydrateGrams: 8, fatGrams: 0 } },
-}
-const getDishDetails = (names: string[], portionOverrides: Record<string,number> = {}): DishDetail[] => names.map(name => {
-  const estimate = dishEstimates[name]
-  const servingWeightGrams=portionOverrides[name]??estimate?.servingWeightGrams??null
-  return estimate ? { name, ...estimate, servingWeightGrams, verification: 'estimated' } : { name, servingWeightGrams, ingredients: [], nutrition: null, verification: servingWeightGrams===null?'unverified':'estimated' }
-})
 const pause = () => new Promise(resolve => setTimeout(resolve, 280))
 const minutesBetween = (start?: string, end?: string): number | null => {
   if (!start || !end) return null
@@ -221,23 +201,46 @@ export const demoData = {
   reply: (id:string):string => {try{return (JSON.parse(localStorage.getItem('demo-replies')??'{}') as Record<string,string>)[id]??''}catch{return ''}},
   schools: async (): Promise<School[]> => (await pause(), schools),
   /** Không truyền `viewer` (hoặc phụ huynh): chỉ trả ảnh đã được BGH xác nhận. */
-  day: async (school: School, date: string, viewer?: Actor): Promise<DayData> => {
+  day: async (school: School, date: string, viewer?: Actor, mealType: BoardingMealType = 'LUNCH'): Promise<DayData> => {
     await pause()
     const showUnconfirmedPhotos = viewer ? canViewUnconfirmedMealPhotos(viewer, mealScope(school)) : false
     const stored = JSON.parse(localStorage.getItem('demo-admin-meals') ?? '[]') as {schoolId:string;date:string;servings:number;dishes:string[];portions?:Record<string,number>;events:{status:string;time:string;confirmed:boolean;photos?:unknown;actorLabel?:unknown}[]}[]
     const saved = stored.find(m => m.schoolId===school.id && m.date===date)
     const central = school.mode === 'CENTRAL_KITCHEN'
-    const selectedDishes = saved?.dishes ?? plannedDishes(date)
+    // Đồng bộ thực đơn theo trường + khối lớp + ngày do BGH quản lý.
+    // Bản ghi vận hành DEMO (demo-admin-meals) chỉ cung cấp hành trình, KHÔNG ghi đè tên món.
+    let boardDishes: ReturnType<typeof boardingMenuRepository.load> = []
+    try {
+      boardDishes = boardingMenuRepository.load()
+        .filter(dish => dish.schoolId === school.id && dish.gradeLevel === gradeForSchool(school.id)
+          && dish.serviceDate === date && dish.mealType === mealType)
+        .sort((a, b) => a.priority - b.priority)
+    } catch { /* Có thể vẫn hiển thị hành trình, nhưng không thay bằng thực đơn khác nguồn. */ }
+    const selectedDishes = boardDishes.map(dish => dish.name)
+    const dishDetails: DishDetail[] = boardDishes.map(dish => ({
+      name: dish.name,
+      servingWeightGrams: dish.portionWeightGrams ?? null,
+      expectedServings: dish.expectedQuantity,
+      ingredients: (dish.ingredientRecords ?? []).flatMap(item => item.amountPerServing === null
+        ? [] : [{ name: item.name, amount: item.amountPerServing, unit: item.unit, inventoryItemId: item.inventoryItemId, supplier: item.supplier, lotCode: item.lotCode, origin: item.origin }]),
+      nutrition: null,
+      verification: 'unverified',
+    }))
     const events: MealEvent[] = saved ? saved.events.map(e=>{
       const reportedPhotos=e.status==='READY'&&Array.isArray(e.photos) ? e.photos.filter((photo):photo is string=>typeof photo==='string'&&photo.startsWith('data:image/')) : []
       return {status:e.status,label:({DISPATCHED:'Xuất bếp',ARRIVED:'Đến trường',PLATED:'Ra món',READY:'Sẵn sàng phục vụ'} as Record<string,string>)[e.status] ?? e.status,time:e.time,actor:typeof e.actorLabel==='string'?e.actorLabel:'Người thao tác DEMO',confirmed:e.confirmed,photos:e.confirmed||showUnconfirmedPhotos?reportedPhotos:[],hasReportedPhotos:reportedPhotos.length>0}
     }) : [
+      { status: 'PREPARING', label: 'Bắt đầu chế biến', time: '08:30', actor: central ? 'Bếp trung tâm An Tâm' : 'Nhân viên bếp nhà trường', confirmed: true, photos: [], hasReportedPhotos: false },
       ...(central ? [{ status: 'DISPATCHED', label: 'Xuất bếp', time: '09:30', actor: 'Bếp trung tâm An Tâm', confirmed: true, photos: [], hasReportedPhotos: false }, { status: 'ARRIVED', label: 'Đến trường', time: '10:00', actor: 'Nhân viên tiếp nhận', confirmed: true, photos: [], hasReportedPhotos: false }] : []),
-      { status: 'PLATED', label: 'Ra món', time: '10:20', actor: 'Nhân viên bếp', confirmed: true, photos: [], hasReportedPhotos: false }, { status: 'READY', label: 'Sẵn sàng phục vụ', time: '10:45', actor: 'Nhân viên bếp', confirmed: true, photos: [readyMealPhoto], hasReportedPhotos: true },
+      { status: 'PLATED', label: 'Ra món', time: '10:20', actor: 'Nhân viên bếp', confirmed: true, photos: [], hasReportedPhotos: false }, { status: 'READY', label: 'Sẵn sàng phục vụ', time: '10:45', actor: 'Nhân viên bếp (DEMO)', confirmed: true, photos: [], hasReportedPhotos: false },
     ]
     const dispatchedAt=events.find(event=>event.status==='DISPATCHED')?.time
     const arrivedAt=events.find(event=>event.status==='ARRIVED')?.time
-    return { servings: saved?.servings ?? (school.id === 'an-phu' ? 485 : school.id === 'binh-an' ? 216 : 360), suppliers: 4, dishes: selectedDishes, dishDetails: getDishDetails(selectedDishes,saved?.portions), kitchen: central ? 'Bếp trung tâm An Tâm' : 'Bếp ăn nhà trường', photo: foodPhoto, updatedAt: '10:45', events, transportDistanceKm: central ? 12.4 : null, transportDurationMinutes: central ? minutesBetween(dispatchedAt,arrivedAt) : null, publicInspection: publicInspections[school.id] ?? null }
+    const plannedDish = boardDishes.find(dish => dish.isDefault) ?? boardDishes[0]
+    const plannedPhoto = plannedDish
+      ? dishImage(plannedDish.name, plannedDish.mealType, plannedDish.imageUrl)
+      : dishImage(mealType === 'BREAKFAST' ? 'Bữa sáng' : 'Trái cây bữa xế', mealType)
+    return { servings: boardDishes.length ? Math.max(...boardDishes.map(dish => dish.expectedQuantity)) : (mealType === 'LUNCH' ? (saved?.servings ?? 0) : 0), suppliers: 4, dishes: selectedDishes, dishDetails, kitchen: central ? 'Bếp trung tâm An Tâm' : 'Bếp ăn nhà trường', photo: mealType === 'LUNCH' ? (boardDishes.find(dish => dish.imageUrl)?.imageUrl ?? foodPhoto) : plannedPhoto, updatedAt: '10:45', events, transportDistanceKm: central ? 12.4 : null, transportDurationMinutes: central ? minutesBetween(dispatchedAt,arrivedAt) : null, publicInspection: publicInspections[school.id] ?? null, mealUseByAt: !saved && mealType === 'LUNCH' ? `${date}T12:45:00+07:00` : null }
   },
   kitchenDocuments: async (school: School): Promise<KitchenDocument[]> => {
     await pause()

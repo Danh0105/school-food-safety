@@ -40,6 +40,7 @@ export type PortionQrIssueInput = {
 }
 
 const storageKey = 'demo-portion-qr-v1'
+const updateEventName = 'demo-portion-qr-updated'
 const emptyDatabase = (): PortionQrDatabase => ({records:[],events:[],batches:[]})
 
 function readDatabase(): PortionQrDatabase {
@@ -59,6 +60,21 @@ function readDatabase(): PortionQrDatabase {
 
 function writeDatabase(database: PortionQrDatabase) {
   localStorage.setItem(storageKey,JSON.stringify(database))
+  // `storage` is only emitted in other tabs. This event keeps every mounted
+  // reader in the current tab (including the BGH workspace) in sync as well.
+  window.dispatchEvent(new CustomEvent(updateEventName))
+}
+
+export function subscribePortionQrUpdates(listener:()=>void) {
+  const onStorage=(event:StorageEvent)=>{
+    if(event.key===storageKey) listener()
+  }
+  window.addEventListener(updateEventName,listener)
+  window.addEventListener('storage',onStorage)
+  return ()=>{
+    window.removeEventListener(updateEventName,listener)
+    window.removeEventListener('storage',onStorage)
+  }
 }
 
 function opaqueToken() {
