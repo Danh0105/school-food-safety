@@ -1,3 +1,4 @@
+import { setDemoStorageItem } from './demoStorage'
 /** Hồ sơ pháp lý DEMO: dữ liệu khai báo, không phải bằng chứng đã kiểm chứng. */
 export type SupplierDocumentType = 'registration' | 'food_safety' | 'contract' | 'origin' | 'inspection' | 'other'
 export const supplierDocumentTypes: ReadonlyArray<{id:SupplierDocumentType;label:string}> = [
@@ -99,4 +100,4 @@ export function readSuppliers():Supplier[] {
     return valid.map(normalizeSupplier) // [] là danh sách đã xóa hết, không khôi phục ngầm dữ liệu mẫu
   } catch {return supplierSeeds.map(normalizeSupplier)}
 }
-export function saveSuppliers(items:Supplier[]):void {localStorage.setItem(storageKey,JSON.stringify(items.map(normalizeSupplier)))}
+export function saveSuppliers(items:Supplier[]):void {setDemoStorageItem(storageKey,JSON.stringify(items.map(normalizeSupplier)))}

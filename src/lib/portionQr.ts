@@ -1,3 +1,4 @@
+import { setDemoStorageItem } from './demoStorage'
 import {
   activePortionQrs,
   assertCanIssuePortionQr,
@@ -59,7 +60,7 @@ function readDatabase(): PortionQrDatabase {
 }
 
 function writeDatabase(database: PortionQrDatabase) {
-  localStorage.setItem(storageKey,JSON.stringify(database))
+  setDemoStorageItem(storageKey,JSON.stringify(database))
   // `storage` is only emitted in other tabs. This event keeps every mounted
   // reader in the current tab (including the BGH workspace) in sync as well.
   window.dispatchEvent(new CustomEvent(updateEventName))

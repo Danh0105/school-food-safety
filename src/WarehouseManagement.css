@@ -78,3 +78,13 @@
 @media(max-width:760px){
   .management-modal.receipt-modal{width:calc(100vw - 16px);max-height:calc(100dvh - 16px);border-radius:17px}.receipt-modal>.dialog-head{padding:17px}.receipt-modal>.dialog-head h2{font-size:20px}.receipt-form{max-height:calc(100dvh - 86px);padding:14px}.receipt-section{padding:14px;border-radius:14px}.receipt-section>header p{font-size:12px}.receipt-header-grid input,.receipt-header-grid textarea,.receipt-header-grid select{font-size:16px}.receipt-input-action{grid-template-columns:minmax(0,1fr) 46px}.receipt-quick-supplier{grid-template-columns:1fr}.receipt-quick-supplier>strong,.receipt-quick-supplier .receipt-error{grid-column:auto}.receipt-quick-supplier>div{display:grid;grid-template-columns:1fr 1fr}.receipt-line-toolbar{align-items:stretch;flex-direction:column}.receipt-line-toolbar>label{width:100%}.receipt-line-toolbar>div{display:grid;grid-template-columns:1fr 1fr}.receipt-summary>div{grid-template-columns:1fr}.receipt-summary article.total strong{font-size:22px}.receipt-file strong{font-size:13px}.receipt-file small{font-size:11px}.receipt-actions{bottom:-14px;margin:0 -14px -14px;padding:13px 14px calc(13px + env(safe-area-inset-bottom,0px))}.receipt-actions button{min-height:46px}.receipt-lines td{font-size:12px}
 }
+.warehouse-dialog{width:min(600px,calc(100vw - 32px));max-height:calc(100dvh - 32px);margin:auto;overflow:auto;background:var(--surface);color:var(--text)}
+.warehouse-dialog.wide{width:min(1120px,calc(100vw - 32px))}
+.warehouse-dialog::backdrop{background:#0d142280;backdrop-filter:blur(4px)}
+.warehouse-dialog .dialog-head{position:sticky;top:-25px;z-index:4;padding:12px 0;background:var(--surface)}
+.warehouse-dialog .icon-button,.warehouse-dialog .text-button{min-width:44px;min-height:44px}
+.warehouse-availability{display:grid;gap:6px;padding:16px;margin:16px 0;border-radius:12px;background:var(--surface-alt);border:1px solid var(--border)}
+.warehouse-availability span{color:var(--muted);font-size:13px;line-height:1.6}
+.warehouse-issue-form .management-form-actions{position:sticky;bottom:-25px;padding:16px 0;background:var(--surface)}
+.warehouse-dialog .stock-detail-summary{grid-template-columns:repeat(4,minmax(0,1fr))}
+@media(max-width:760px){.warehouse-dialog.wide{width:calc(100vw - 16px);padding:16px}.warehouse-dialog .stock-detail-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.warehouse-issue-form .management-form-grid{grid-template-columns:1fr}.warehouse-dialog .dialog-head{top:-16px}.warehouse-dialog .stock-detail-tabs{overflow-x:auto}.warehouse-dialog .stock-detail-tabs button{min-height:44px}}

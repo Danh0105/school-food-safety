@@ -1,3 +1,5 @@
+import { useDemoStorageRefresh } from './lib/demoStorage'
+import { setDemoStorageItem } from './lib/demoStorage'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { FormEvent, ReactNode } from 'react'
 import { Apple, Building2, CalendarDays, Check, CheckCircle2, ChefHat, ChevronLeft, ChevronRight, CircleHelp, Coffee, Eye, RefreshCw, Plus, Trash2, Utensils, X } from 'lucide-react'
@@ -222,6 +224,7 @@ export default function BoardingMenuManager({ school, selectedDate, managementSc
   const [items, setItems] = useState(initialLoad.items)
   const [kitchens, setKitchens] = useState(initialLoad.kitchens)
   const [loadError, setLoadError] = useState(initialLoad.error)
+  useDemoStorageRefresh(['demo-boarding-menu-v3','demo-kitchen-directory-v1'],()=>{try{setItems(boardingMenuRepository.load());setKitchens(kitchenDirectoryRepository.load())}catch{setLoadError('Không đọc được dữ liệu đã lưu.')}})
   const [grade, setGrade] = useState<GradeLevel>(() => gradeForSchool(school.id))
   const [monday, setMonday] = useState(mondayOfWeek(selectedDate))
   const [year, setYear] = useState(String(parseIsoDate(selectedDate).getFullYear()))
@@ -341,7 +344,7 @@ export default function BoardingMenuManager({ school, selectedDate, managementSc
     if (!parentCanChoose || useUI.getState().role !== 'parent') return false
     try {
       parentMealChoiceRepository.select(choiceScope(dish.serviceDate, dish.mealType), dish.id)
-      localStorage.setItem(`demo-student-code-${school.id}`, studentCode.trim())
+      setDemoStorageItem(`demo-student-code-${school.id}`, studentCode.trim())
       setChoiceError('')
       showNotice(`Đã chọn “${dish.name}” cho ${mealLabel(dish.mealType).toLocaleLowerCase('vi')} của ${studentCode.trim()} ngày ${dateLabel(dish.serviceDate)} (DEMO).`)
       return true

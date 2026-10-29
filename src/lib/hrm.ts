@@ -1,3 +1,4 @@
+import { setDemoStorageItem } from './demoStorage'
 export type EmploymentStatus = 'active' | 'leave' | 'inactive'
 export type EmployeePosition = 'head_chef' | 'cook' | 'prep' | 'packing' | 'dispatcher' | 'sanitation'
 export type ShiftCode = 'morning' | 'day' | 'afternoon'
@@ -104,8 +105,8 @@ const isAssignment = (value: unknown): value is WorkAssignment => typeof value =
 
 export const readEmployees = () => readArray(EMPLOYEE_KEY, demoEmployees, isEmployee)
 export const readAssignments = () => readArray(ASSIGNMENT_KEY, demoAssignments, isAssignment)
-export const saveEmployees = (employees: KitchenEmployee[]) => localStorage.setItem(EMPLOYEE_KEY, JSON.stringify(employees))
-export const saveAssignments = (assignments: WorkAssignment[]) => localStorage.setItem(ASSIGNMENT_KEY, JSON.stringify(assignments))
+export const saveEmployees = (employees: KitchenEmployee[]) => setDemoStorageItem(EMPLOYEE_KEY, JSON.stringify(employees))
+export const saveAssignments = (assignments: WorkAssignment[]) => setDemoStorageItem(ASSIGNMENT_KEY, JSON.stringify(assignments))
 
 export function weekFrom(date: string): string[] {
   const value = new Date(`${date}T12:00:00`)

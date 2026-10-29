@@ -1,3 +1,4 @@
+import { setDemoStorageItem } from './demoStorage'
 import readyServingDemo from '../assets/ready-service-demo.jpg'
 import { boardingMenuRepository, gradeForSchool } from './boardingMenu'
 import type { BoardingMealType } from './boardingMenu'
@@ -227,13 +228,9 @@ export const demoData = {
       verification: 'unverified',
     }))
     const events: MealEvent[] = saved ? saved.events.map(e=>{
-      const reportedPhotos=e.status==='READY'&&Array.isArray(e.photos) ? e.photos.filter((photo):photo is string=>typeof photo==='string'&&photo.startsWith('data:image/')) : []
+      const reportedPhotos=Array.isArray(e.photos) ? e.photos.filter((photo):photo is string=>typeof photo==='string'&&photo.startsWith('data:image/')) : []
       return {status:e.status,label:({DISPATCHED:'Xuất bếp',ARRIVED:'Đến trường',PLATED:'Ra món',READY:'Sẵn sàng phục vụ'} as Record<string,string>)[e.status] ?? e.status,time:e.time,actor:typeof e.actorLabel==='string'?e.actorLabel:'Người thao tác DEMO',confirmed:e.confirmed,photos:e.confirmed||showUnconfirmedPhotos?reportedPhotos:[],hasReportedPhotos:reportedPhotos.length>0}
-    }) : [
-      { status: 'PREPARING', label: 'Bắt đầu chế biến', time: '08:30', actor: central ? 'Bếp trung tâm An Tâm' : 'Nhân viên bếp nhà trường', confirmed: true, photos: [], hasReportedPhotos: false },
-      ...(central ? [{ status: 'DISPATCHED', label: 'Xuất bếp', time: '09:30', actor: 'Bếp trung tâm An Tâm', confirmed: true, photos: [], hasReportedPhotos: false }, { status: 'ARRIVED', label: 'Đến trường', time: '10:00', actor: 'Nhân viên tiếp nhận', confirmed: true, photos: [], hasReportedPhotos: false }] : []),
-      { status: 'PLATED', label: 'Ra món', time: '10:20', actor: 'Nhân viên bếp', confirmed: true, photos: [], hasReportedPhotos: false }, { status: 'READY', label: 'Sẵn sàng phục vụ', time: '10:45', actor: 'Nhân viên bếp (DEMO)', confirmed: true, photos: [], hasReportedPhotos: false },
-    ]
+    }) : []
     const dispatchedAt=events.find(event=>event.status==='DISPATCHED')?.time
     const arrivedAt=events.find(event=>event.status==='ARRIVED')?.time
     const plannedDish = boardDishes.find(dish => dish.isDefault) ?? boardDishes[0]
@@ -266,6 +263,6 @@ export const demoData = {
   feedback: async (): Promise<Feedback[]> => readFeedback(),
   sendFeedback: async (input: Omit<Feedback, 'id' | 'status' | 'createdAt'>): Promise<Feedback> => {
     await pause(); const item = { ...input, id: `DEMO-${crypto.randomUUID().slice(0, 8).toUpperCase()}`, status: 'received', createdAt: new Date().toISOString() }
-    const all = await demoData.feedback(); localStorage.setItem('demo-feedback', JSON.stringify([item, ...all])); return item
+    const all = await demoData.feedback(); setDemoStorageItem('demo-feedback', JSON.stringify([item, ...all])); return item
   },
 }

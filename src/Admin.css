@@ -30,4 +30,11 @@
 .admin-overview-journey{margin-top:20px}
 .operation-internal-heading{font-size:17px;font-weight:750;margin:26px 0 7px}
 .operation-internal-note{color:var(--muted);font-size:12px;line-height:1.6;margin:0 0 15px}
+.admin-modal .milestone-attestation{display:flex;flex-direction:row;align-items:flex-start;gap:12px;padding:14px;border:1px solid var(--border);border-radius:12px;background:var(--surface-alt);line-height:1.6}
+.milestone-attestation input[type=checkbox]{width:20px;height:20px;flex:0 0 20px;margin-top:3px;accent-color:var(--primary)}
+.milestone-dialog-actions{display:flex;justify-content:flex-end;gap:12px;margin-top:16px}
+.milestone-dialog-actions button{min-height:44px}
+.dispatch-qr-status{display:grid;gap:8px;margin:16px 0;padding:14px;border:1px solid var(--border);border-radius:12px;background:var(--surface-alt);font-size:13px;line-height:1.6}
+.dispatch-qr-status p{color:var(--muted)}
+.dispatch-qr-status button{min-height:44px;justify-self:start}
 @media(max-width:760px){.operation-shared-public{margin:14px 0 20px}.operation-internal-heading{margin-top:20px}}

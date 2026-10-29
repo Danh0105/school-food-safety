@@ -1,3 +1,4 @@
+import { useDemoStorageRefresh } from './lib/demoStorage'
 import Select from './components/ui/Select'
 import SpotlightCard from './components/react-bits/SpotlightCard'
 import { useEffect, useMemo, useRef, useState } from 'react'
@@ -97,6 +98,7 @@ function fileToDataUrl(file:File):Promise<string> {
 
 export default function SupplierManagement({role}:{role:ViewRole}) {
   const [suppliers,setSuppliers]=useState(readSuppliers)
+  useDemoStorageRefresh(['demo-suppliers-v1'],()=>setSuppliers(readSuppliers()))
   const [code,setCode]=useState('')
   const [name,setName]=useState('')
   const [phone,setPhone]=useState('')

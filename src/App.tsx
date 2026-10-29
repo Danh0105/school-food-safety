@@ -1,3 +1,4 @@
+import { useDemoStorageRefresh } from './lib/demoStorage'
 import readyServingDemo from "./assets/ready-service-demo.jpg";
 import supervisionCheckDemo from "./assets/supervision-check-demo.svg";
 import supervisionSampleDemo from "./assets/supervision-sample-demo.svg";
@@ -22,7 +23,7 @@ import {
   Apple,
   ArrowRight,
   Bell,
-  Boxes,
+
   Building2,
   CalendarClock,
   CalendarDays,
@@ -113,7 +114,6 @@ const adminNavigation = [
   { path: "/ma-qr-suat-an", label: "QR từng suất ăn", icon: QrCode },
   { path: "/quan-ly-kho", label: "Quản lý kho", icon: Warehouse },
   { path: "/nha-cung-cap", label: "Nhà cung cấp", icon: Building2 },
-  { path: "/xuat-nhap-ton", label: "Xuất nhập tồn", icon: Boxes },
   { path: "/phan-anh", label: "Phản ánh & góp ý", icon: MessageSquareText },
   { path: "/bao-cao", label: "Báo cáo tổng hợp", icon: CalendarDays },
 ];
@@ -666,6 +666,7 @@ function SupervisionSection({
   date: string;
   data: DayData;
 }) {
+  const role = useUI((state) => state.role);
   const [photoPreview, setPhotoPreview] = useState<{
     url: string;
     title: string;
@@ -704,6 +705,9 @@ function SupervisionSection({
   ];
   return (
     <div className="supervision-stack">
+      {role !== "parent" && (
+        <Suspense fallback={<div className="skeleton feedback-skeleton" />}><AdminPanel key={`${school.id}-${date}-${role}`} school={school} operationsOnly /></Suspense>
+      )}
       <section
         className="card supervision-photo-section"
         aria-labelledby="supervision-photos-title"
@@ -713,8 +717,8 @@ function SupervisionSection({
             <div className="section-kicker">HÌNH ẢNH MINH HỌA GIÁM SÁT</div>
             <h2 id="supervision-photos-title">Theo dõi bữa ăn bằng hình ảnh</h2>
             <p className="muted">
-              Cùng bộ ảnh và dữ liệu công khai ở cả năm không gian: Phụ huynh,
-              Ban Giám hiệu, Phòng VH–XH và hai bếp.
+              Ảnh và dữ liệu công khai dùng chung giữa các không gian phụ huynh,
+              nhà trường, cơ quan giám sát và đơn vị bếp.
             </p>
           </div>
           <span className="round-icon">
@@ -798,7 +802,7 @@ function Login({ close }: { close: () => void }) {
   const setRole = useUI((s) => s.setRole);
   const navigate = useNavigate();
   const cache = useQueryClient();
-  // Chỉ ba vai trò hiển thị được phép đăng nhập/chuyển không gian trong DEMO.
+  // Chọn vai trò DEMO, không phải xác thực tài khoản thật.
   const options: {
     role: ViewRole;
     name: string;
@@ -839,7 +843,7 @@ function Login({ close }: { close: () => void }) {
   return (
     <Dialog title="Khám phá không gian làm việc" close={close}>
       <p className="muted">
-        Chọn một trong năm vai trò để trải nghiệm giao diện. Đây là bản frontend
+        Chọn vai trò để trải nghiệm giao diện. Đây là bản frontend
         minh họa, không xác thực tài khoản thật.
       </p>
       <div className="role-options">
@@ -885,6 +889,7 @@ function Shell() {
     useState<BoardingMealType>("LUNCH");
   const pendingDetailScroll = useRef(false);
   const queryClient = useQueryClient();
+  useDemoStorageRefresh(['demo-feedback','demo-replies','demo-admin-meals','demo-boarding-menu-v3','demo-kitchen-directory-v1'],()=>{for(const key of ['day','week','parent-meal-day','feedback'])void queryClient.invalidateQueries({queryKey:[key]})});
   useEffect(() => {
     const refresh = () => {
       void queryClient.invalidateQueries({ queryKey: ["day"] });
@@ -903,9 +908,11 @@ function Shell() {
     };
     window.addEventListener("storage", onStorage);
     window.addEventListener("demo-boarding-menu-updated", refresh);
+    window.addEventListener("demo-meal-service-updated", refresh);
     return () => {
       window.removeEventListener("storage", onStorage);
       window.removeEventListener("demo-boarding-menu-updated", refresh);
+      window.removeEventListener("demo-meal-service-updated", refresh);
     };
   }, [queryClient]);
   const week = weekDates(date);
@@ -975,6 +982,7 @@ function Shell() {
     "/giam-sat",
     "/ho-so-phap-ly",
     "/van-hanh",
+    "/quan-ly-kho",
     "/phan-anh",
     "/bao-cao",
   ];
@@ -1032,6 +1040,8 @@ function Shell() {
       </Suspense>
     );
   // Không cho mở màn hình đã bị loại bỏ bằng URL nhập trực tiếp.
+  if (location.pathname === "/xuat-nhap-ton")
+    return <Navigate to="/quan-ly-kho" replace />;
   if (location.pathname === "/ho-so")
     return <Navigate to="/ho-so-phap-ly" replace />;
   if (!nav.some((item) => item.path === location.pathname))
@@ -1315,7 +1325,7 @@ function Shell() {
                     </div>
                   }
                 >
-                  <AdminPanel school={school} />
+                  <AdminPanel key={`${school.id}-${date}-${role}`} school={school} />
                 </Suspense>
               )}
               {sharedAdminArea && (

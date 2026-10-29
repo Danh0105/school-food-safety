@@ -1,3 +1,4 @@
+import { setDemoStorageItem } from './demoStorage'
 import { useUI } from './store'
 import { inventoryItems } from './inventory'
 
@@ -436,7 +437,7 @@ export const parentMealChoiceRepository = {
     const next = this.load().filter(item => !(item.studentCode === record.studentCode
       && item.schoolId === record.schoolId && item.gradeLevel === record.gradeLevel
       && item.serviceDate === record.serviceDate && item.mealType === record.mealType))
-    localStorage.setItem(PARENT_MEAL_CHOICES_KEY, JSON.stringify([...next, record]))
+    setDemoStorageItem(PARENT_MEAL_CHOICES_KEY, JSON.stringify([...next, record]))
     window.dispatchEvent(new Event(PARENT_MEAL_CHOICES_EVENT))
   },
 }
@@ -475,7 +476,7 @@ export const boardingMenuRepository = {
       if (group.length > maxDishesPerMeal(group[0]!.mealType)) throw new Error('Vượt quá số món cho phép trong một ngày/bữa.')
       if (group.filter(dish => dish.isDefault).length > 1) throw new Error('Mỗi bữa/ngày chỉ được chọn một món mặc định.')
     }
-    localStorage.setItem(BOARDING_MENU_STORAGE_KEY, JSON.stringify(items))
+    setDemoStorageItem(BOARDING_MENU_STORAGE_KEY, JSON.stringify(items))
     window.dispatchEvent(new Event('demo-boarding-menu-updated'))
   },
   seed: seedMenu,
@@ -492,7 +493,7 @@ export const kitchenDirectoryRepository = {
   save(items: KitchenProfile[]) {
     requireSchoolBoard()
     if (!items.every(isKitchenProfile)) throw new Error('Danh mục bếp không hợp lệ.')
-    localStorage.setItem(KITCHEN_DIRECTORY_STORAGE_KEY, JSON.stringify(items))
+    setDemoStorageItem(KITCHEN_DIRECTORY_STORAGE_KEY, JSON.stringify(items))
   },
   seed: seedKitchens,
 }
@@ -536,7 +537,7 @@ export const kitchenDishProposalsRepository = {
       throw new Error('Nguyên liệu phải chọn từ lô kho của bếp được phân công.')
     }
     const next = this.load().filter(item => item.id !== proposal.id)
-    localStorage.setItem(KITCHEN_DISH_PROPOSALS_KEY, JSON.stringify([...next, proposal]))
+    setDemoStorageItem(KITCHEN_DISH_PROPOSALS_KEY, JSON.stringify([...next, proposal]))
     window.dispatchEvent(new Event('demo-kitchen-dishes-updated'))
   },
 }

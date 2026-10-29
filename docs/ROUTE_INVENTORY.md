@@ -108,7 +108,7 @@ Báo cáo
 
 ## Đối chiếu với workspace hiện tại
 
-Workspace hiện tại có route cho phụ huynh/an toàn thực phẩm như `/bua-an`, `/nguon-goc`, `/giam-sat`, `/van-hanh`, `/ma-qr-suat-an`, `/quan-ly-kho`, `/nha-cung-cap`, `/xuat-nhap-ton`, `/ho-so`, `/phan-anh`, `/bao-cao`, `/truy-xuat-suat/:token`.
+Workspace có route cho phụ huynh/an toàn thực phẩm như `/bua-an`, `/giam-sat`, `/van-hanh`, `/ma-qr-suat-an`, `/quan-ly-kho`, `/nha-cung-cap`, `/ho-so-phap-ly`, `/phan-anh`, `/bao-cao`, `/truy-xuat-suat/:token`. `/xuat-nhap-ton` là URL tương thích, chuyển sang `/quan-ly-kho`, không còn là module riêng; `/ho-so` chuyển sang `/ho-so-phap-ly`.
 
 Hai route graph không tương thích về domain, auth và layout. Không được thay route hiện tại bằng route KIDO nếu chưa chọn chiến lược multi-app hoặc repository đích.
 

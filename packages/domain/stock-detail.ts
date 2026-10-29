@@ -39,8 +39,8 @@ export type StockMovement = { id:string; at:string; kind:MovementKind; label:str
 
 export type ReceiptLineDocument = { id?:string; productId:string; baseQuantity:number; lotNumber?:string }
 export type ReceiptDocument = { id:string; number:string; date:string; warehouse:string; status:string; creator?:string; productId?:string; quantity?:number; kind?:string; description?:string; lotNumber?:string; lines?:readonly ReceiptLineDocument[] }
-export type IssueDocument = { id:string; number:string; date:string; branch:string; status:string; creator?:string; productId:string; quantity:number; kind:string; description:string; lotNumber?:string }
-export type TransferDocument = { id:string; number:string; date:string; from:string; to:string; status:string; creator?:string; productId:string; quantity:number; description?:string }
+export type IssueDocument = { id:string; number:string; date:string; branch:string; status:string; creator?:string; productId:string; quantity:number; kind:string; description:string; lotNumber?:string; allocations?:{lotNumber:string|null;quantity:number}[] }
+export type TransferDocument = { id:string; number:string; date:string; from:string; to:string; status:string; creator?:string; productId?:string; quantity?:number; description?:string; lines?:{id:string;productId:string;destinationProductId?:string;quantity:number;lotNumber:string|null}[] }
 
 const RECEIPT_ADJUSTMENT='Nhập điều chỉnh'
 const RECEIPT_ADJUSTMENT_CODE='ADJUSTMENT'
@@ -110,13 +110,18 @@ export function productMovements(productIds:ReadonlySet<string>,documents:{recei
   for(const issue of documents.issues){
     if(issue.status!=='completed'||!productIds.has(issue.productId)||!(positive(issue.quantity)>0)) continue
     const adjustment=issue.kind===ISSUE_ADJUSTMENT
-    moves.push({id:`${issue.id}:out`,at:issue.date,kind:adjustment?'adjustment_out':'issue',label:adjustment?'Điều chỉnh giảm':issue.kind||'Xuất kho',quantity:-positive(issue.quantity),warehouse:issue.branch,lotNumber:issue.lotNumber||null,document:{type:'issue',id:issue.id,number:issue.number},actor:issue.creator||null,reason:issue.description||null})
+    const allocations=issue.allocations?.length?issue.allocations:[{lotNumber:issue.lotNumber||null,quantity:issue.quantity}]
+    for(const [index,line] of allocations.entries())moves.push({id:`${issue.id}:${index}:out`,at:issue.date,kind:adjustment?'adjustment_out':'issue',label:adjustment?'Điều chỉnh giảm':issue.kind||'Xuất kho',quantity:-positive(line.quantity),warehouse:issue.branch,lotNumber:line.lotNumber,document:{type:'issue',id:issue.id,number:issue.number},actor:issue.creator||null,reason:issue.description||null})
   }
   for(const transfer of documents.transfers){
-    if(transfer.status!=='completed'||!productIds.has(transfer.productId)||!(positive(transfer.quantity)>0)) continue
+    if(transfer.status!=='completed') continue
     const document:MovementDocument={type:'transfer',id:transfer.id,number:transfer.number}
-    moves.push({id:`${transfer.id}:out`,at:transfer.date,kind:'transfer_out',label:'Chuyển kho đi',quantity:-positive(transfer.quantity),warehouse:transfer.from,lotNumber:null,document,actor:transfer.creator||null,reason:transfer.description||null})
-    moves.push({id:`${transfer.id}:in`,at:transfer.date,kind:'transfer_in',label:'Chuyển kho đến',quantity:positive(transfer.quantity),warehouse:transfer.to,lotNumber:null,document,actor:transfer.creator||null,reason:transfer.description||null})
+    const lines=transfer.lines?.length?transfer.lines:[{id:'legacy',productId:transfer.productId??'',quantity:transfer.quantity??0,lotNumber:null,destinationProductId:transfer.productId}]
+    for(const line of lines){
+      if(!(positive(line.quantity)>0))continue
+      if(productIds.has(line.productId))moves.push({id:`${transfer.id}:${line.id}:out`,at:transfer.date,kind:'transfer_out',label:'Chuyển kho đi',quantity:-positive(line.quantity),warehouse:transfer.from,lotNumber:line.lotNumber,document,actor:transfer.creator||null,reason:transfer.description||null})
+      if(line.destinationProductId&&productIds.has(line.destinationProductId))moves.push({id:`${transfer.id}:${line.id}:in`,at:transfer.date,kind:'transfer_in',label:'Chuyển kho đến',quantity:positive(line.quantity),warehouse:transfer.to,lotNumber:line.lotNumber,document,actor:transfer.creator||null,reason:transfer.description||null})
+    }
   }
   return moves.sort((a,b)=>b.at.localeCompare(a.at)||a.id.localeCompare(b.id))
 }

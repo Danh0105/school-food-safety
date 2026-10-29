@@ -1,3 +1,4 @@
+import { setDemoStorageItem } from './lib/demoStorage'
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowRight, CalendarClock, Check, ChefHat, ClipboardCheck, Clock3, CookingPot, PackageCheck, Route, ShieldCheck, Sparkles, SprayCan, Users } from 'lucide-react'
@@ -32,7 +33,7 @@ export default function CentralKitchenRoleDashboard({role,date}:{role:CentralKit
   const [completed,setCompleted]=useState(()=>readCompleted(role,date))
   const progress=Math.round(completed.length/view.tasks.length*100)
   const today=new Date(`${date}T12:00:00`).toLocaleDateString('vi-VN',{weekday:'long',day:'2-digit',month:'2-digit',year:'numeric'})
-  const toggle=(id:string)=>{const next=completed.includes(id)?completed.filter(item=>item!==id):[...completed,id];setCompleted(next);localStorage.setItem(`demo-kitchen-tasks-${role}-${date}`,JSON.stringify(next))}
+  const toggle=(id:string)=>{const next=completed.includes(id)?completed.filter(item=>item!==id):[...completed,id];setCompleted(next);setDemoStorageItem(`demo-kitchen-tasks-${role}-${date}`,JSON.stringify(next))}
   const status=useMemo(()=>completed.length===view.tasks.length?'Đã hoàn thành checklist':completed.length?'Đang thực hiện':'Chưa bắt đầu',[completed.length,view.tasks.length])
   return <div className="kitchen-role-dashboard">
     <section className="card kitchen-role-hero"><div className="kitchen-role-icon"><Icon size={27}/></div><div><span>{view.kicker}</span><h2>{view.title}</h2><p>{view.description}</p></div><div className="kitchen-role-identity"><small>VAI TRÒ ĐANG XEM</small><strong>{centralKitchenRoleLabels[role]}</strong><em>Frontend DEMO · {today}</em></div></section>

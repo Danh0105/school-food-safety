@@ -37,7 +37,7 @@ export function MealJourneyProgress({
   const entries = steps.map(step => ({ ...step, event: data.events.find(event => event.status === step.status) }))
   const lastConfirmed = [...entries].reverse().find(item => item.event?.confirmed)?.event
   const lastReported = [...entries].reverse().find(item => item.event)?.event
-  const latest = lastConfirmed ?? lastReported
+  const latest = lastReported
   const readyEvent = data.events.find(event => event.status === 'READY')
   const readyPhoto = readyEvent?.confirmed ? readyEvent.photos[0] : undefined
   let activePortions: ReturnType<typeof portionQrDemo.active> = []
@@ -52,7 +52,7 @@ export function MealJourneyProgress({
     <div className="journey-summary">
       <span className="live-dot"/>
       <div><strong>{latest?.label ?? 'Chưa có mốc vận hành'}</strong>
-        <p>{!latest ? 'Chưa có bản ghi · Chờ đơn vị cập nhật' : lastConfirmed ? 'Mốc gần nhất đã xác nhận' : 'Đã báo cáo · Chờ Ban Giám hiệu xác nhận'}</p>
+        <p>{!latest ? 'Chưa có bản ghi · Chờ đơn vị cập nhật' : latest.confirmed ? 'Mốc gần nhất đã xác nhận' : `Đã báo cáo · Chờ Ban Giám hiệu xác nhận${lastConfirmed ? ` · Đã xác nhận đến ${lastConfirmed.label}` : ''}`}</p>
       </div>
       <Clock3 size={20}/>
     </div>
@@ -71,7 +71,7 @@ export function MealJourneyProgress({
               <span><Utensils size={12}/>{readyPhoto ? 'Ảnh đã được xác nhận công khai (DEMO)' : 'Ảnh minh họa DEMO · Chưa có ảnh được duyệt'}</span>
             </button>
             {mode === 'CENTRAL_KITCHEN' && readyEvent?.confirmed && (samplePortion ? <a className="journey-ready-qr" href={portionTraceUrl(samplePortion.publicToken)} aria-label={`Mở chi tiết QR suất ăn #${String(samplePortion.sequence).padStart(3, '0')}`}>
-              <span className="journey-ready-qr-code"><QRCodeSVG value={portionTraceUrl(samplePortion.publicToken)} size={104} level="M" marginSize={1}/></span>
+              <span className="journey-ready-qr-code"><QRCodeSVG title="Mã QR truy xuất suất ăn DEMO" value={portionTraceUrl(samplePortion.publicToken)} size={104} level="M" marginSize={1}/></span>
               <span className="journey-ready-qr-copy"><small>QR TỪNG SUẤT · DEMO</small><strong>Suất #{String(samplePortion.sequence).padStart(3, '0')}</strong><em>Bữa trưa · {portionDate}</em><em>{activePortions.length.toLocaleString('vi-VN')} mã đang hoạt động</em><span>Quét xem toàn bộ hồ sơ bữa ăn <ExternalLink size={12}/></span></span>
             </a> : <div className="journey-ready-qr-empty"><QrCode size={22}/><span><strong>QR từng suất chưa được phát hành</strong><small>Bếp trung tâm cần phát hành đủ QR trước khi trang truy xuất công khai xuất hiện.</small></span></div>)}
           </div>}

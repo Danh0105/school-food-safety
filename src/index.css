@@ -67,6 +67,9 @@
 }
 :root[data-theme=dark]{
   color-scheme:dark;
+  --foreground:var(--text);
+  --card-foreground:var(--text);
+  --popover-foreground:var(--text);
   --primary:#86aaff;
   --primary-dark:#bad0ff;
   --primary-hover:#9ab8ff;

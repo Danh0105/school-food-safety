@@ -1,3 +1,4 @@
+import { setDemoStorageItem } from './demoStorage'
 /** Local-only DEMO repository. Never use for production evidence or sensitive documents. */
 import type { KitchenDocument } from './data'
 
@@ -34,13 +35,13 @@ export function readLegalDocuments(schoolId: string, defaults: KitchenDocument[]
 export function persistLegalDocument(schoolId:string, value:LegalDocument) {
   const stored=parseStored(schoolId)
   stored[value.id]=value
-  localStorage.setItem(`${KEY}:${schoolId}`,JSON.stringify(stored))
+  setDemoStorageItem(`${KEY}:${schoolId}`,JSON.stringify(stored))
   window.dispatchEvent(new CustomEvent('demo-kitchen-legal-updated',{detail:{schoolId}}))
 }
 export function removeLegalDocument(schoolId:string, id:string) {
   const stored=parseStored(schoolId)
   delete stored[id]
-  localStorage.setItem(`${KEY}:${schoolId}`,JSON.stringify(stored))
+  setDemoStorageItem(`${KEY}:${schoolId}`,JSON.stringify(stored))
   window.dispatchEvent(new CustomEvent('demo-kitchen-legal-updated',{detail:{schoolId}}))
 }
 function openDatabase():Promise<IDBDatabase> {

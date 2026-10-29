@@ -1,3 +1,4 @@
+import { setDemoStorageItem } from './demoStorage'
 import type { ViewRole } from './store'
 
 export type InventoryMovementType = 'RECEIPT' | 'ISSUE'
@@ -179,7 +180,7 @@ export const inventoryDemo = {
     const current=item.openingBalance+allMovements().filter(movement=>movement.itemId===item.id).reduce((sum,movement)=>sum+(movement.type==='RECEIPT'?movement.quantity:-movement.quantity),0)
     if(input.type==='ISSUE'&&input.quantity>current) throw new Error('INSUFFICIENT_STOCK')
     const movement:InventoryMovement={id:crypto.randomUUID(),...input,recordedAt:new Date().toISOString(),actorId:actor.id,actorName:actor.name,actorRole:'kitchen_staff',demo:true}
-    localStorage.setItem(storageKey,JSON.stringify([...storedMovements(),movement]))
+    setDemoStorageItem(storageKey,JSON.stringify([...storedMovements(),movement]))
     return movement
   },
 }

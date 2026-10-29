@@ -4,14 +4,14 @@ export type ServiceMode = 'ON_SITE'|'CENTRAL_KITCHEN'
 export type Status = 'PREPARING'|'DISPATCHED'|'ARRIVED'|'PLATED'|'READY'
 export type Service = { id:string; schoolId:string; kitchenId:string|null; mode:ServiceMode; status:Status; version:number }
 const flows: Record<ServiceMode,readonly Status[]> = {ON_SITE:['PREPARING','PLATED','READY'],CENTRAL_KITCHEN:['PREPARING','DISPATCHED','ARRIVED','PLATED','READY']}
-/** Theo quy trình hiện tại, ảnh bữa ăn chỉ bắt buộc tại mốc sẵn sàng phục vụ. */
-export function requiresMealServicePhoto(status:Status) { return status==='READY' }
+/** Mỗi mốc bàn giao/phục vụ phải có ảnh riêng của sự kiện. */
+export function requiresMealServicePhoto(status:Status) { return status!=='PREPARING' }
 export function assertTransition(service:Service,next:Status,actor:Actor,photos:readonly string[],version:number) {
  if(version!==service.version) throw new Error('VERSION_CONFLICT')
  const flow=flows[service.mode];if(flow[flow.indexOf(service.status)+1]!==next) throw new Error('INVALID_TRANSITION')
  if(next==='DISPATCHED') {if(actor.role!=='central_kitchen'||actor.kitchenId!==service.kitchenId) throw new Error('FORBIDDEN')}
- else if(next==='ARRIVED') {if(actor.role!=='school_receiver'||actor.schoolId!==service.schoolId) throw new Error('FORBIDDEN')}
- else if(!((actor.role==='meal_service_staff'||actor.role==='school_kitchen')&&actor.schoolId===service.schoolId)) throw new Error('FORBIDDEN')
+ else if(next==='ARRIVED') {if(!['school_receiver','school_board'].includes(actor.role)||actor.schoolId!==service.schoolId) throw new Error('FORBIDDEN')}
+ else if(!((actor.role==='meal_service_staff'||(actor.role==='school_kitchen'&&service.mode==='ON_SITE')||(actor.role==='school_board'&&service.mode==='CENTRAL_KITCHEN'))&&actor.schoolId===service.schoolId)) throw new Error('FORBIDDEN')
  if(requiresMealServicePhoto(next)&&(!photos.length||new Set(photos).size!==photos.length)) throw new Error('PHOTOS_REQUIRED')
 }
 export function canReadFeedback(actor:Actor,record:{parentId:string;schoolId:string;wardId:string;kitchenId:string|null}) {

@@ -1,3 +1,4 @@
+import { useDemoStorageRefresh } from './lib/demoStorage'
 import Select from './components/ui/Select'
 import { useMemo, useState } from 'react'
 import type { FormEvent, ReactNode } from 'react'
@@ -46,6 +47,7 @@ export default function CentralKitchenHrm({canManageEmployees=true}:{canManageEm
   const [tab, setTab] = useState<Tab>('employees')
   const [employees, setEmployees] = useState(readEmployees)
   const [assignments, setAssignments] = useState(readAssignments)
+  useDemoStorageRefresh(['demo-central-kitchen-employees-v1','demo-central-kitchen-assignments-v1'],()=>{setEmployees(readEmployees());setAssignments(readAssignments())})
   const [employeeDialog, setEmployeeDialog] = useState<KitchenEmployee | null | undefined>(undefined)
   const [assignmentDialog, setAssignmentDialog] = useState<{ employeeId: string; date: string } | null>(null)
   const [search, setSearch] = useState('')

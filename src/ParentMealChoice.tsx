@@ -1,3 +1,4 @@
+import { setDemoStorageItem } from './lib/demoStorage'
 import { useEffect, useState } from 'react'
 import { CheckCircle2, CircleHelp, Utensils } from 'lucide-react'
 import { boardingMenuRepository, defaultMealDish, gradeForSchool, parentMealChoiceRepository, PARENT_MEAL_CHOICES_EVENT, PARENT_MEAL_CHOICES_KEY, BOARDING_MENU_STORAGE_KEY } from './lib/boardingMenu'
@@ -35,7 +36,7 @@ export default function ParentMealChoice({ schoolId, date }: { schoolId: string;
   const choose = (dishId: string) => {
     try {
       parentMealChoiceRepository.select(scope, dishId)
-      localStorage.setItem(`demo-student-code-${schoolId}`, scope.studentCode)
+      setDemoStorageItem(`demo-student-code-${schoolId}`, scope.studentCode)
       setNotice('Đã lưu món cho học sinh trong bản DEMO trên trình duyệt này.')
       setError('')
       setRevision(value => value + 1)
