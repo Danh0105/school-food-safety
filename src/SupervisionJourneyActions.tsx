@@ -50,12 +50,12 @@ export default function SupervisionJourneyActions({ school, date, mealType, data
   }, [])
   void revision
   const saved = getSavedJourney(scope)
-  const stages = stagesForSchool(school.mode)
+  const stages = stagesForSchool(school.mode, role)
   const next = getNextReportableStage(scope, school.mode, role)
   const pending = saved?.events.filter(event => !event.confirmed && stages.includes(event.status)) ?? []
   const isBoard = role === 'school_board'
   const canUpdate = !!next || (isBoard && pending.length > 0)
-  const mealLabel = mealType === 'BREAKFAST' ? 'bữa sáng' : 'bữa trưa'
+  const mealLabel = mealType === 'BREAKFAST' ? 'bữa sáng' : mealType === 'LUNCH' ? 'bữa trưa' : 'bữa xế'
   const edit = (value: Editing) => { setEditing(value); setNote(''); setPhoto(''); setPhotoName(''); setError('') }
   const save = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()

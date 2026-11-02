@@ -1,6 +1,6 @@
 ﻿import { Children, Fragment, isValidElement, useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import type { CSSProperties, KeyboardEvent, PointerEvent as ReactPointerEvent, ReactElement, ReactNode } from 'react'
-import { Check, ChevronDown } from 'lucide-react'
+import { Check, ChevronDown, Search } from 'lucide-react'
 import './Select.css'
 
 /**
@@ -29,6 +29,9 @@ type Props = {
   variant?: 'default' | 'hero'
   size?: 'md' | 'sm'
   className?: string
+  /** Hiển thị ô tìm ngay trong menu và lọc theo nhãn, mô tả, tag. */
+  searchable?: boolean
+  searchPlaceholder?: string
 }
 type Phase = 'closed' | 'open' | 'closing'
 
@@ -54,7 +57,9 @@ function optionsFrom(children: ReactNode): SelectOption[] {
   })
 }
 
-export default function Select({ label, value, defaultValue, options: optionList, children, onValueChange, onBlur, placeholder = 'Chọn một mục', disabled = false, required = false, invalid = false, name, id, variant = 'default', size = 'md', className = '' }: Props) {
+const normalizedText = (value: string) => value.toLocaleLowerCase('vi-VN').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd')
+
+export default function Select({ label, value, defaultValue, options: optionList, children, onValueChange, onBlur, placeholder = 'Chọn một mục', disabled = false, required = false, invalid = false, name, id, variant = 'default', size = 'md', className = '', searchable = false, searchPlaceholder = 'Tìm kiếm…' }: Props) {
   const options = optionList ?? optionsFrom(children)
   const [inner, setInner] = useState(() => defaultValue ?? options.find(option => !option.disabled)?.value ?? '')
   const current = value ?? inner
@@ -65,12 +70,14 @@ export default function Select({ label, value, defaultValue, options: optionList
   const trigger = useRef<HTMLButtonElement>(null)
   const panel = useRef<HTMLDivElement>(null)
   const list = useRef<HTMLDivElement>(null)
+  const searchInput = useRef<HTMLInputElement>(null)
   const pill = useRef<HTMLSpanElement>(null)
   const labelRef = useRef<HTMLSpanElement>(null)
   const [phase, setPhase] = useState<Phase>('closed')
   const [active, setActive] = useState<number | null>(null)
   const [position, setPosition] = useState<CSSProperties>({})
   const [missing, setMissing] = useState(false)
+  const [query, setQuery] = useState('')
   const typed = useRef('')
   const typedAt = useRef(0)
   const scrub = useRef<number | null>(null)
@@ -80,7 +87,10 @@ export default function Select({ label, value, defaultValue, options: optionList
   // Bị vô hiệu khi đang mở thì coi như đã đóng.
   const shownPhase: Phase = disabled ? 'closed' : phase
   const isOpen = shownPhase === 'open'
-  const enabled = options.map((option, index) => option.disabled ? -1 : index).filter(index => index >= 0)
+  const normalizedQuery = normalizedText(query.trim())
+  const visibleOptions = options.map((option, index) => ({ option, index })).filter(({ option }) => !normalizedQuery
+    || normalizedText([option.label, option.description, option.tag].filter(Boolean).join(' ')).includes(normalizedQuery))
+  const enabled = visibleOptions.map(({ option, index }) => option.disabled ? -1 : index).filter(index => index >= 0)
 
   const commit = (next: string) => {
     if (next === current) return
@@ -94,6 +104,7 @@ export default function Select({ label, value, defaultValue, options: optionList
     clearTimeout(closeTimer.current)
     setActive(null)
     scrub.current = null
+    setQuery('')
     if (mode === 'instant' || !panel.current) setPhase('closed')
     else { panel.current.dataset.state = 'closed'; setPhase('closing'); closeTimer.current = setTimeout(() => setPhase('closed'), POP_OUT_MS + 20) }
     if (restoreFocus) trigger.current?.focus({ preventScroll: true })
@@ -137,6 +148,10 @@ export default function Select({ label, value, defaultValue, options: optionList
     return () => { window.removeEventListener('resize', place); window.removeEventListener('scroll', place, true) }
   }, [isOpen, supportsPopover, variant, size])
 
+  useEffect(() => {
+    if (isOpen && searchable) requestAnimationFrame(() => searchInput.current?.focus({ preventScroll: true }))
+  }, [isOpen, searchable])
+
   // Vệt sáng trượt tới dòng đang trỏ; lần đầu mở thì đặt thẳng vào vị trí, không trượt.
   useLayoutEffect(() => {
     const highlight = pill.current
@@ -175,12 +190,25 @@ export default function Select({ label, value, defaultValue, options: optionList
     }
     if (event.key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey) {
       event.preventDefault()
-      const now = Date.now()
+      const now = event.timeStamp
       typed.current = now - typedAt.current > 650 ? event.key : typed.current + event.key
       typedAt.current = now
       const match = options.findIndex(option => !option.disabled && option.label.toLocaleLowerCase('vi').startsWith(typed.current.toLocaleLowerCase('vi')))
       if (match >= 0) { if (isOpen) setActive(match); else open(match) }
     }
+  }
+  const onSearchKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Escape') { event.preventDefault(); close('pop', true); return }
+    if (!enabled.length) return
+    if (['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) {
+      event.preventDefault()
+      jump.current = false
+      const edge = event.key === 'Home' ? enabled[0]! : event.key === 'End' ? enabled.at(-1)! : null
+      const from = enabled.indexOf(active ?? enabled[0]!)
+      setActive(edge ?? enabled[(from + (event.key === 'ArrowDown' ? 1 : -1) + enabled.length) % enabled.length]!)
+      return
+    }
+    if (event.key === 'Enter' && active !== null) { event.preventDefault(); choose(active) }
   }
   const rowAt = (clientY: number) => {
     const rows = list.current?.querySelectorAll<HTMLElement>('[data-index]') ?? []
@@ -230,16 +258,18 @@ export default function Select({ label, value, defaultValue, options: optionList
     </button>
     {(name !== undefined || required) && nativeMirror}
     {missing && <span className="glide-select-error" role="alert">Vui lòng chọn {label.toLocaleLowerCase('vi')}.</span>}
-    {shownPhase !== 'closed' && <div ref={panel} popover="manual" className="apple-select-menu glide-select-menu" data-state="open" style={position} onPointerDown={event => event.preventDefault()}>
+    {shownPhase !== 'closed' && <div ref={panel} popover="manual" className="apple-select-menu glide-select-menu" data-state="open" style={position} onPointerDown={event => { if (!(event.target instanceof HTMLInputElement)) event.preventDefault() }}>
+      {searchable && <label className="glide-select-search"><Search size={15}/><span className="sr-only">Tìm trong {label}</span><input ref={searchInput} type="search" aria-label={`Tìm trong ${label}`} value={query} placeholder={searchPlaceholder} autoComplete="off" onChange={event => { setQuery(event.target.value); jump.current = true; const next = options.findIndex(option => !option.disabled && normalizedText([option.label, option.description, option.tag].filter(Boolean).join(' ')).includes(normalizedText(event.target.value.trim()))); setActive(next >= 0 ? next : null) }} onKeyDown={onSearchKeyDown}/></label>}
       <div ref={list} role="listbox" id={`${uid}-options`} aria-label={label} className="glide-select-list" data-live={active !== null ? '' : undefined}
         onPointerDown={onListDown} onPointerMove={onListMove} onPointerUp={onListUp} onPointerCancel={() => { scrub.current = null }}>
         <span ref={pill} className="glide-select-pill" aria-hidden="true"/>
-        {options.map((option, index) => <div role="option" aria-selected={index === selectedIndex} aria-disabled={option.disabled || undefined} id={`${uid}-option-${index}`} data-index={index} data-value={option.value} key={`${option.value}-${index}`} className={`apple-select-option glide-select-option ${active === index ? 'is-active' : ''} ${option.disabled ? 'is-disabled' : ''}`}
+        {visibleOptions.map(({ option, index }) => <div role="option" aria-selected={index === selectedIndex} aria-disabled={option.disabled || undefined} id={`${uid}-option-${index}`} data-index={index} data-value={option.value} key={`${option.value}-${index}`} className={`apple-select-option glide-select-option ${active === index ? 'is-active' : ''} ${option.disabled ? 'is-disabled' : ''}`}
           onClick={event => { if (event.nativeEvent instanceof PointerEvent && event.nativeEvent.pointerType !== 'touch' && event.nativeEvent.pointerType !== '') return; choose(index) }}>
           <span className="glide-select-text"><strong>{option.label}</strong>{option.description && <small>{option.description}</small>}</span>
           {option.tag && <span className="glide-select-tag">{option.tag}</span>}
           <span className="select-check" data-on={index === selectedIndex ? '' : undefined} aria-hidden="true"><Check size={size === 'sm' ? 15 : 17} strokeWidth={2.4}/></span>
         </div>)}
+        {visibleOptions.length === 0 && <p className="glide-select-empty">Không tìm thấy kết quả phù hợp.</p>}
       </div>
     </div>}
   </div>

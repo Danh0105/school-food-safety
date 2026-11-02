@@ -24,6 +24,10 @@ label>.glide-select{margin-top:8px}
 .apple-select-menu{position:fixed;inset:auto;margin:0;padding:5px;border:1px solid color-mix(in srgb,var(--border) 85%,transparent);border-radius:14px;background:var(--surface);color:var(--text);box-shadow:0 16px 40px #14204c24,0 2px 6px #14204c0f;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;z-index:100;opacity:0;transform:scale(.95);transition:opacity var(--glide-pop) var(--glide-ease),transform var(--glide-pop) var(--glide-ease)}
 .apple-select-menu[data-state=open]{opacity:1;transform:none}
 .apple-select-menu[data-state=closed]{transition-duration:var(--glide-pop-out);pointer-events:none}
+.glide-select-search{position:sticky;top:0;z-index:3;display:flex;align-items:center;gap:8px;margin:0 0 5px;padding:8px 10px;border:1px solid var(--border);border-radius:10px;background:var(--surface);color:var(--muted);box-shadow:0 3px 10px color-mix(in srgb,var(--text) 5%,transparent)}
+.glide-select-search:focus-within{border-color:var(--primary);box-shadow:0 0 0 3px color-mix(in srgb,var(--primary) 12%,transparent)}
+.glide-select-search input{width:100%;min-width:0;padding:0;border:0;outline:0;background:transparent;color:var(--text);font:inherit;font-size:13px;font-weight:600}
+.glide-select-search input::placeholder{color:var(--muted)}
 .glide-select-list{position:relative;display:grid;gap:2px}
 .glide-select-pill{position:absolute;top:0;right:0;left:0;height:40px;border-radius:9px;background:var(--primary-soft);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--primary) 14%,transparent);opacity:0;pointer-events:none;transition:transform var(--glide-glide) var(--glide-ease),height var(--glide-glide) var(--glide-ease),opacity 150ms ease}
 .apple-select-option{position:relative;z-index:1;display:flex;align-items:center;gap:10px;min-height:40px;padding:8px 9px 8px 12px;border-radius:9px;font-size:13px;line-height:1.4;cursor:pointer;user-select:none;-webkit-user-select:none;transition:color .12s ease,background-color .15s ease}
@@ -37,6 +41,7 @@ label>.glide-select{margin-top:8px}
 .glide-select-tag{flex:none;color:var(--muted);font-size:11px;font-weight:650;white-space:nowrap}
 .select-check{display:inline-flex;flex:none;width:18px;color:var(--primary);visibility:hidden}
 .select-check[data-on]{visibility:visible}
+.glide-select-empty{margin:0;padding:18px 10px;color:var(--muted);font-size:12px;font-weight:600;text-align:center}
 .glide-select.size-sm .apple-select-option{min-height:36px;padding:7px 8px 7px 10px;font-size:12px}
 
 /* <select> gốc ẩn: chỉ để FormData, required và tự điền của trình duyệt */

@@ -9,10 +9,12 @@ import fruit from '../assets/dishes/fruit.svg'
 import milk from '../assets/dishes/milk.svg'
 import soup from '../assets/dishes/soup.svg'
 import protein from '../assets/dishes/protein.svg'
+import chickenNoodlesDemo from '../assets/dishes/chicken-noodles-demo.webp'
 import type { BoardingMealType } from './boardingMenu'
 
 export function dishIllustration(name: string, mealType: BoardingMealType): string {
   const normalized = name.toLocaleLowerCase('vi-VN').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd')
+  if (normalized === 'mi xao ga') return chickenNoodlesDemo
   if (/chao/.test(normalized)) return porridge
   if (/bun|mi |my |pho|hu tieu/.test(normalized)) return noodles
   if (/ca |ca$|tom|muc/.test(normalized)) return fish

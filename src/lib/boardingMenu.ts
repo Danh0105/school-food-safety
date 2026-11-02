@@ -53,8 +53,8 @@ export type BoardingDish = {
   ingredients: string[]
   /** Khối lượng một khẩu phần theo kế hoạch (g), null khi chưa có thông tin. */
   portionWeightGrams?: number | null
-  /** Đánh dấu đã áp dụng bộ định lượng DEMO v1; không tự điền lại giá trị BGH cố ý để trống. */
-  demoPortionSampleVersion?: 1
+  /** Phiên bản bộ định lượng DEMO; không tự điền lại giá trị BGH cố ý chỉnh sửa. */
+  demoPortionSampleVersion?: 1 | 2
   ingredientRecords?: DishIngredientRecord[]
   safetyMonitoring?: DishSafetyMonitoring
   description: string
@@ -179,17 +179,7 @@ const seedMenu = (): BoardingDish[] => {
   }
   // Nhà cung cấp và mã lô DEMO được tạo để minh họa luồng thông tin, không phải bằng chứng kiểm định.
   return items.map(item => ({
-    ...item,
-    portionWeightGrams: demoWeightByMeal[item.mealType],
-    demoPortionSampleVersion: 1,
-    ingredientRecords: item.ingredients.map((name, index) => ({
-      name,
-      amountPerServing: demoIngredientAmount(name, item.mealType, index).amount,
-      unit: demoIngredientAmount(name, item.mealType, index).unit,
-      supplier: index === 0 ? 'Nhà cung cấp lương thực (DEMO)' : 'Nhà cung cấp thực phẩm (DEMO)',
-      lotCode: `DEMO-${item.schoolId.toUpperCase()}-${item.serviceDate.replace(/-/g, '')}-${index + 1}`,
-      origin: 'Nguồn nguyên liệu minh họa · Chưa đối chiếu chứng từ',
-    })),
+    ...applyDemoRecipe(item),
     safetyMonitoring: {
       // Ngày đã qua có nhật ký tự khai báo DEMO; ngày tương lai chỉ có kế hoạch.
       // REPORTED là khai báo nội bộ, KHÔNG đồng nghĩa kết quả kiểm thực/lưu mẫu hợp lệ.
@@ -259,9 +249,126 @@ const demoIngredientAmount = (name: string, mealType: BoardingMealType, index: n
   return { amount: amounts[Math.min(index, amounts.length - 1)]!, unit: isLiquid ? 'ml' : 'g' }
 }
 
+type DemoRecipeRow = { name: string; amount: number; unit?: 'g' | 'ml' }
+
+/** Công thức minh họa dùng nguyên liệu thực tế, không dùng tên món phụ làm nguyên liệu. */
+const demoRecipes: Record<string, readonly DemoRecipeRow[]> = {
+  'mi xao ga': [
+    { name: 'Mì sợi', amount: 180 }, { name: 'Thịt gà', amount: 65 },
+    { name: 'Rau cải', amount: 35 }, { name: 'Cà rốt', amount: 25 },
+    { name: 'Dầu thực vật và gia vị', amount: 15 },
+  ],
+  'thit heo kho trung': [
+    { name: 'Thịt heo', amount: 105 }, { name: 'Trứng gà', amount: 60 },
+    { name: 'Nước dừa', amount: 45, unit: 'ml' }, { name: 'Hành và gia vị', amount: 15 },
+  ],
+  'ca sot ca chua': [
+    { name: 'Cá phi lê', amount: 120 }, { name: 'Cà chua', amount: 70 },
+    { name: 'Nước sốt', amount: 40, unit: 'ml' }, { name: 'Hành và gia vị', amount: 10 },
+  ],
+  'ga kho gung': [
+    { name: 'Thịt gà', amount: 125 }, { name: 'Nước kho', amount: 35, unit: 'ml' },
+    { name: 'Gừng', amount: 8 }, { name: 'Hành và gia vị', amount: 12 },
+  ],
+  'bo xao rau cu': [
+    { name: 'Thịt bò', amount: 90 }, { name: 'Rau củ', amount: 120 },
+    { name: 'Dầu thực vật và gia vị', amount: 15 },
+  ],
+  'ca thu kho thom': [
+    { name: 'Cá thu', amount: 120 }, { name: 'Thơm', amount: 55 },
+    { name: 'Nước kho', amount: 35, unit: 'ml' }, { name: 'Hành và gia vị', amount: 10 },
+  ],
+  'com chien rau cu': [
+    { name: 'Gạo tẻ', amount: 90 }, { name: 'Trứng gà', amount: 50 },
+    { name: 'Rau củ', amount: 70 }, { name: 'Dầu thực vật và gia vị', amount: 15 },
+  ],
+  'dau hu sot nam': [
+    { name: 'Đậu hũ', amount: 120 }, { name: 'Nấm', amount: 70 },
+    { name: 'Cà chua', amount: 45 }, { name: 'Gia vị', amount: 10 },
+  ],
+  'trung hap thit rau cu': [
+    { name: 'Trứng gà', amount: 90 }, { name: 'Thịt heo', amount: 45 },
+    { name: 'Rau củ', amount: 55 }, { name: 'Nước dùng', amount: 30, unit: 'ml' },
+  ],
+  'ca vien sot rau cu': [
+    { name: 'Cá viên', amount: 110 }, { name: 'Rau củ', amount: 80 },
+    { name: 'Nước sốt', amount: 40, unit: 'ml' },
+  ],
+  'ga ap chao sot nhe': [
+    { name: 'Thịt gà', amount: 130 }, { name: 'Rau củ', amount: 70 },
+    { name: 'Nước sốt', amount: 25, unit: 'ml' },
+  ],
+  'thit vien kho cu qua': [
+    { name: 'Thịt heo', amount: 110 }, { name: 'Củ quả', amount: 90 },
+    { name: 'Nước kho', amount: 35, unit: 'ml' },
+  ],
+  'bun ga rau xanh': [
+    { name: 'Bún tươi', amount: 165 }, { name: 'Thịt gà', amount: 60 },
+    { name: 'Rau xanh', amount: 35 }, { name: 'Nước dùng', amount: 60, unit: 'ml' },
+  ],
+  'nui xao bo rau cu': [
+    { name: 'Nui', amount: 170 }, { name: 'Thịt bò', amount: 65 },
+    { name: 'Rau củ', amount: 65 }, { name: 'Dầu thực vật và gia vị', amount: 15 },
+  ],
+  'chao ga rau cu': [
+    { name: 'Gạo tẻ', amount: 45 }, { name: 'Thịt gà', amount: 55 },
+    { name: 'Cà rốt', amount: 30 }, { name: 'Nước dùng', amount: 150, unit: 'ml' },
+  ],
+  'bun thit rau xanh': [
+    { name: 'Bún tươi', amount: 155 }, { name: 'Thịt heo', amount: 55 },
+    { name: 'Rau xanh', amount: 35 }, { name: 'Nước dùng', amount: 35, unit: 'ml' },
+  ],
+  'chao thit bam bi do': [
+    { name: 'Gạo tẻ', amount: 45 }, { name: 'Thịt heo', amount: 50 },
+    { name: 'Bí đỏ', amount: 45 }, { name: 'Nước dùng', amount: 140, unit: 'ml' },
+  ],
+  'banh mi trung rau': [
+    { name: 'Bánh mì', amount: 100 }, { name: 'Trứng gà', amount: 55 },
+    { name: 'Rau xanh', amount: 35 }, { name: 'Sốt', amount: 15 },
+  ],
+  'banh mem va sua': [{ name: 'Bánh mềm', amount: 50 }, { name: 'Sữa', amount: 100, unit: 'ml' }],
+  'sua chua va trai cay': [{ name: 'Sữa chua', amount: 90 }, { name: 'Trái cây theo mùa', amount: 60 }],
+  'che dau xanh it ngot': [{ name: 'Đậu xanh', amount: 45 }, { name: 'Nước', amount: 90, unit: 'ml' }, { name: 'Đường', amount: 10 }],
+  'banh chuoi va sua': [{ name: 'Bánh chuối', amount: 55 }, { name: 'Sữa', amount: 95, unit: 'ml' }],
+}
+
+function recipeRows(name: string, mealType: BoardingMealType, fallback: readonly string[]): DemoRecipeRow[] {
+  return [...(demoRecipes[normalizeIngredientName(name)] ?? fallback.map((ingredient, index) => ({
+    name: ingredient, ...demoIngredientAmount(ingredient, mealType, index),
+  })))]
+}
+
+function applyDemoRecipe(dish: BoardingDish): BoardingDish {
+  const recipe = recipeRows(dish.name, dish.mealType, dish.ingredients)
+  const ingredientRecords: DishIngredientRecord[] = recipe.map((row, index) => {
+    const stock = inventoryItems.find(item => item.schoolId === dish.schoolId
+      && normalizeIngredientName(item.ingredientName) === normalizeIngredientName(row.name))
+    return {
+      ...(stock && { inventoryItemId: stock.id }),
+      name: row.name,
+      amountPerServing: row.amount,
+      unit: row.unit ?? 'g',
+      supplier: index === 0 ? 'Nhà cung cấp lương thực (DEMO)' : 'Nhà cung cấp thực phẩm (DEMO)',
+      lotCode: stock?.lotCode ?? `DEMO-${dish.schoolId.toUpperCase()}-${dish.serviceDate.replace(/-/g, '')}-${index + 1}`,
+      origin: stock?.origin ?? 'Nguồn nguyên liệu minh họa · Chưa đối chiếu chứng từ',
+    }
+  })
+  return {
+    ...dish,
+    ingredients: recipe.map(row => row.name),
+    portionWeightGrams: recipe.reduce((total, row) => total + row.amount, 0),
+    ingredientRecords,
+    demoPortionSampleVersion: 2,
+  }
+}
+
 /** Hoàn thiện dữ liệu v2 cũ tại lúc đọc, không ghi localStorage từ vai trò chỉ xem. */
 const withDemoPortionSamples = (dish: BoardingDish): BoardingDish => {
-  if (dish.demoPortionSampleVersion === 1) return dish
+  if (dish.demoPortionSampleVersion === 2) return dish
+  // Chỉ sửa công thức của seed chưa bị người dùng chỉnh; dữ liệu tự nhập được giữ nguyên.
+  if (dish.id.startsWith('demo-') && dish.createdAt === dish.updatedAt && demoRecipes[normalizeIngredientName(dish.name)]) {
+    return applyDemoRecipe(dish)
+  }
   const existing = dish.ingredientRecords ?? []
   const needsPortion = dish.portionWeightGrams == null
   const needsIngredient = dish.ingredients.some(name => {
@@ -287,7 +394,7 @@ const withDemoPortionSamples = (dish: BoardingDish): BoardingDish => {
     ...dish,
     portionWeightGrams: dish.portionWeightGrams ?? demoWeightByMeal[dish.mealType],
     ingredientRecords: [...records, ...extraRecords],
-    demoPortionSampleVersion: 1,
+    demoPortionSampleVersion: 2,
   }
 }
 
@@ -327,7 +434,7 @@ const isBoardingDish = (value: unknown): value is BoardingDish => {
     && Array.isArray(item.ingredients)
     && item.ingredients.every(ingredient => typeof ingredient === 'string')
     && (item.portionWeightGrams === undefined || item.portionWeightGrams === null || (typeof item.portionWeightGrams === 'number' && Number.isFinite(item.portionWeightGrams) && item.portionWeightGrams > 0))
-    && (item.demoPortionSampleVersion === undefined || item.demoPortionSampleVersion === 1)
+    && (item.demoPortionSampleVersion === undefined || item.demoPortionSampleVersion === 1 || item.demoPortionSampleVersion === 2)
     && (item.ingredientRecords === undefined || (Array.isArray(item.ingredientRecords) && item.ingredientRecords.every(isIngredientRecord)))
     && (item.safetyMonitoring === undefined || isSafetyMonitoring(item.safetyMonitoring))
     && typeof item.description === 'string'

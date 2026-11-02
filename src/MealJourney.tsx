@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Check, Clock3, ExternalLink, MapPin, QrCode, ShieldCheck, Timer, Utensils } from 'lucide-react'
 import { QRCodeSVG } from 'qrcode.react'
 import type { DayData, School } from './lib/data'
+import type { ViewRole } from './lib/store'
 import { portionQrDemo, portionTraceUrl, subscribePortionQrUpdates } from './lib/portionQr'
 import type { MealType } from '../packages/domain/portion-qr'
 import readyServingDemo from './assets/ready-service-demo.jpg'
@@ -27,6 +28,7 @@ export function MealJourneyProgress({
   schoolId,
   serviceDate,
   mealType = 'LUNCH',
+  role,
   onReadyPhotoClick,
 }: {
   data: DayData
@@ -34,11 +36,14 @@ export function MealJourneyProgress({
   schoolId?: string
   serviceDate?: string
   mealType?: MealType
+  role?: ViewRole
   onReadyPhotoClick: () => void
 }) {
   const [, setQrRevision] = useState(0)
   useEffect(() => subscribePortionQrUpdates(() => setQrRevision(value => value + 1)), [])
-  const steps = mode === 'CENTRAL_KITCHEN' ? centralSteps : onSiteSteps
+  const steps = mode === 'CENTRAL_KITCHEN'
+    ? role === 'school_kitchen' ? centralSteps.filter(step => step.status !== 'ARRIVED') : centralSteps
+    : onSiteSteps
   const entries = steps.map(step => ({ ...step, event: data.events.find(event => event.status === step.status) }))
   const lastConfirmed = [...entries].reverse().find(item => item.event?.confirmed)?.event
   const lastReported = [...entries].reverse().find(item => item.event)?.event
@@ -48,7 +53,11 @@ export function MealJourneyProgress({
   const placeholderPhoto = mealType === 'BREAKFAST' ? breakfastDemo : mealType === 'SNACK' ? snackDemo : readyServingDemo
   let activePortions: ReturnType<typeof portionQrDemo.active> = []
   if (mode === 'CENTRAL_KITCHEN' && schoolId && serviceDate) {
-    try { activePortions = portionQrDemo.active(portionQrDemo.scopeForSchool({ schoolId, serviceDate, mealType })) }
+    try {
+      const currentDishes = new Set(data.dishes.map(dish => dish.trim().toLocaleLowerCase('vi-VN')))
+      activePortions = portionQrDemo.active(portionQrDemo.scopeForSchool({ schoolId, serviceDate, mealType }))
+        .filter(record => currentDishes.has(record.dishName.trim().toLocaleLowerCase('vi-VN')))
+    }
     catch { /* QR chưa sẵn sàng được hiển thị bằng empty state, không suy diễn token. */ }
   }
   const samplePortion = activePortions[0]
@@ -90,23 +99,24 @@ export function MealJourneyProgress({
 }
 
 /** Dùng đúng cùng giao diện nhật ký cho các vai trò ở mục Giám sát & an toàn. */
-export function MealJourneyPanel({school, serviceDate, mealType='LUNCH', data, onReadyPhotoClick}: {
+export function MealJourneyPanel({school, serviceDate, mealType='LUNCH', data, role, onReadyPhotoClick}: {
   school: School
   serviceDate?: string
   mealType?: MealType
   data: DayData
+  role?: ViewRole
   onReadyPhotoClick: () => void
 }) {
   return <section className="card detail-section shared-operation-journal" aria-label="Nhật ký vận hành dùng chung">
     <div className="card-header"><div>
       <div className="section-kicker">NHẬT KÝ VẬN HÀNH</div>
-      <h2>{school.mode === 'CENTRAL_KITCHEN' ? 'Từ bếp trung tâm đến trường' : 'Bữa ăn nấu tại trường'}</h2>
+      <h2>{role === 'school_kitchen' ? 'Nhật ký chế biến và phục vụ tại trường' : school.mode === 'CENTRAL_KITCHEN' ? 'Từ bếp trung tâm đến trường' : 'Bữa ăn nấu tại trường'}</h2>
       <p className="muted shared-journal-context">Nhật ký riêng cho {mealType === 'BREAKFAST' ? 'bữa sáng' : mealType === 'LUNCH' ? 'bữa trưa' : 'bữa xế'}, cùng nguồn dữ liệu công khai ở mọi vai trò</p>
     </div></div>
-    {school.mode === 'CENTRAL_KITCHEN' && <div className="transport-facts" aria-label="Thông tin vận chuyển từ bếp trung tâm đến trường">
+    {school.mode === 'CENTRAL_KITCHEN' && role !== 'school_kitchen' && <div className="transport-facts" aria-label="Thông tin vận chuyển từ bếp trung tâm đến trường">
       <div><span className="transport-icon"><MapPin size={18}/></span><span><small>Khoảng cách</small><strong>{data.transportDistanceKm !== null ? `${data.transportDistanceKm.toLocaleString('vi-VN')} km` : 'Chưa ghi nhận'}</strong></span></div>
       <div><span className="transport-icon"><Timer size={18}/></span><span><small>Thời gian vận chuyển</small><strong>{data.transportDurationMinutes !== null ? `${data.transportDurationMinutes} phút` : 'Chưa ghi nhận'}</strong></span></div>
     </div>}
-    <MealJourneyProgress data={data} mode={school.mode} schoolId={school.id} serviceDate={serviceDate} mealType={mealType} onReadyPhotoClick={onReadyPhotoClick}/>
+    <MealJourneyProgress data={data} mode={school.mode} role={role} schoolId={school.id} serviceDate={serviceDate} mealType={mealType} onReadyPhotoClick={onReadyPhotoClick}/>
   </section>
 }

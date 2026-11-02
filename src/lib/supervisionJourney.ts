@@ -26,15 +26,21 @@ type SavedJourney = {
   dishes: string[]
 }
 const STORAGE_KEY = 'demo-admin-meals'
-const allStages: JourneyStatus[] = ['PREPARING', 'DISPATCHED', 'ARRIVED', 'PLATED', 'READY']
+/** PREPARING được giữ trong type để đọc bản DEMO cũ, nhưng không còn là mốc người dùng phải cập nhật. */
+const allStages: JourneyStatus[] = ['DISPATCHED', 'ARRIVED', 'PLATED', 'READY']
 export const stageNames: Record<JourneyStatus, string> = {
   PREPARING: 'Bắt đầu chế biến', DISPATCHED: 'Xuất bếp', ARRIVED: 'Đến trường', PLATED: 'Ra món', READY: 'Sẵn sàng phục vụ',
 }
 const roleNames: Partial<Record<ViewRole, string>> = {
   central_kitchen: 'Bếp trung tâm', school_kitchen: 'Bếp tại trường', school_board: 'Ban Giám hiệu',
 }
-export const stagesForSchool = (mode: School['mode']): JourneyStatus[] =>
-  mode === 'CENTRAL_KITCHEN' ? allStages : ['PREPARING', 'PLATED', 'READY']
+/** Bếp tại trường không có bước tiếp nhận chuyến giao trong giao diện tác nghiệp.
+ * Không xóa dữ liệu ARRIVED lịch sử: các vai trò khác vẫn đọc được khi có quyền.
+ */
+export const stagesForSchool = (mode: School['mode'], role?: ViewRole): JourneyStatus[] =>
+  mode === 'CENTRAL_KITCHEN'
+    ? role === 'school_kitchen' ? ['DISPATCHED', 'PLATED', 'READY'] : allStages
+    : ['PLATED', 'READY']
 
 function readAll(): SavedJourney[] {
   try {
@@ -51,15 +57,14 @@ function matching(meal: SavedJourney, scope: SupervisionScope): boolean {
 }
 export const getSavedJourney = (scope: SupervisionScope): SavedJourney | undefined => readAll().find(meal => matching(meal, scope))
 export function canReportStage(role: ViewRole, mode: School['mode'], stage: JourneyStatus): boolean {
-  if (!stagesForSchool(mode).includes(stage)) return false
+  if (!stagesForSchool(mode, role).includes(stage)) return false
   if (mode === 'ON_SITE') return role === 'school_kitchen'
-  return stage === 'PREPARING' || stage === 'DISPATCHED'
-    ? role === 'central_kitchen'
+  return stage === 'DISPATCHED' ? role === 'central_kitchen'
     : role === 'school_kitchen' // Bếp tại trường nhận suất và phục vụ cả bữa nấu từ bếp trung tâm.
 }
 export function getNextReportableStage(scope: SupervisionScope, mode: School['mode'], role: ViewRole): JourneyStatus | null {
   const record = getSavedJourney(scope)
-  const stages = stagesForSchool(mode)
+  const stages = stagesForSchool(mode, role)
   const next = stages.find(stage => !record?.events.some(event => event.status === stage))
   if (!next || !canReportStage(role, mode, next)) return null
   // Chuỗi mốc của một bữa bắt buộc tuần tự, kể cả khi BGH chưa duyệt mốc trước.
@@ -85,7 +90,7 @@ export function updateJourney(args: {
   const record: SavedJourney = previous
     ? { ...previous, mealType: scope.mealType, events: [...previous.events] }
     : { schoolId: scope.schoolId, date: scope.serviceDate, mealType: scope.mealType,
-      status: 'PREPARING', events: [], servings: data.servings, dishes: [...data.dishes] }
+      status, events: [], servings: data.servings, dishes: [...data.dishes] }
   if (action === 'report') {
     if (getNextReportableStage(scope, school.mode, role) !== status)
       throw Error('Không có quyền hoặc chưa đến mốc được cập nhật. Cần thực hiện đúng thứ tự.')

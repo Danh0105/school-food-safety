@@ -217,6 +217,12 @@ export const demoData = {
           && dish.serviceDate === date && dish.mealType === mealType)
         .sort((a, b) => a.priority - b.priority)
     } catch { /* Có thể vẫn hiển thị hành trình, nhưng không thay bằng thực đơn khác nguồn. */ }
+    // Tổng quan phụ huynh chỉ trình bày đúng một món đang áp dụng cho mỗi bữa.
+    // Các vai trò nội bộ vẫn nhận đủ phương án để quản lý và đối soát.
+    if (viewer?.role === 'parent' && boardDishes.length > 1) {
+      const appliedDish = boardDishes.find(dish => dish.isDefault) ?? boardDishes[0]!
+      boardDishes = [appliedDish]
+    }
     const selectedDishes = boardDishes.map(dish => dish.name)
     const dishDetails: DishDetail[] = boardDishes.map(dish => ({
       name: dish.name,
@@ -232,11 +238,10 @@ export const demoData = {
       : mealType==='LUNCH'
         ? {PREPARING:'08:30',DISPATCHED:'09:30',ARRIVED:'10:00',PLATED:'10:20',READY:'10:45'}
         : {PREPARING:'13:10',DISPATCHED:'13:45',ARRIVED:'14:00',PLATED:'14:10',READY:'14:20'}
-    const events: MealEvent[] = saved ? saved.events.map(e=>{
+    const events: MealEvent[] = saved ? saved.events.filter(e=>e.status!=='PREPARING').map(e=>{
       const reportedPhotos=e.status==='READY'&&Array.isArray(e.photos) ? e.photos.filter((photo):photo is string=>typeof photo==='string'&&photo.startsWith('data:image/')) : []
       return {status:e.status,label:({PREPARING:'Bắt đầu chế biến',DISPATCHED:'Xuất bếp',ARRIVED:'Đến trường',PLATED:'Ra món',READY:'Sẵn sàng phục vụ'} as Record<string,string>)[e.status] ?? e.status,time:e.time,actor:typeof e.actorLabel==='string'?e.actorLabel:'Người thao tác DEMO',confirmed:e.confirmed,photos:e.confirmed||showUnconfirmedPhotos?reportedPhotos:[],hasReportedPhotos:reportedPhotos.length>0}
     }) : [
-      { status: 'PREPARING', label: 'Bắt đầu chế biến', time: eventTimes.PREPARING, actor: central ? 'Bếp trung tâm An Tâm' : 'Nhân viên bếp nhà trường', confirmed: true, photos: [], hasReportedPhotos: false },
       ...(central ? [{ status: 'DISPATCHED', label: 'Xuất bếp', time: eventTimes.DISPATCHED, actor: 'Bếp trung tâm An Tâm', confirmed: true, photos: [], hasReportedPhotos: false }, { status: 'ARRIVED', label: 'Đến trường', time: eventTimes.ARRIVED, actor: 'Nhân viên tiếp nhận', confirmed: true, photos: [], hasReportedPhotos: false }] : []),
       { status: 'PLATED', label: 'Ra món', time: eventTimes.PLATED, actor: 'Nhân viên bếp', confirmed: true, photos: [], hasReportedPhotos: false }, { status: 'READY', label: 'Sẵn sàng phục vụ', time: eventTimes.READY, actor: 'Nhân viên bếp (DEMO)', confirmed: true, photos: [], hasReportedPhotos: false },
     ]
@@ -246,7 +251,7 @@ export const demoData = {
     const plannedPhoto = plannedDish
       ? dishImage(plannedDish.name, plannedDish.mealType, plannedDish.imageUrl)
       : dishImage(mealType === 'BREAKFAST' ? 'Bữa sáng' : 'Trái cây bữa xế', mealType)
-    return { serviceDate: date, mealType, servings: boardDishes.length ? Math.max(...boardDishes.map(dish => dish.expectedQuantity)) : (mealType === 'LUNCH' ? (saved?.servings ?? 0) : 0), suppliers: 4, dishes: selectedDishes, dishDetails, kitchen: central ? 'Bếp trung tâm An Tâm' : 'Bếp ăn nhà trường', photo: mealType === 'LUNCH' ? (boardDishes.find(dish => dish.imageUrl)?.imageUrl ?? foodPhoto) : plannedPhoto, updatedAt: events.at(-1)?.time ?? eventTimes.READY, events, transportDistanceKm: central ? 12.4 : null, transportDurationMinutes: central ? minutesBetween(dispatchedAt,arrivedAt) : null, publicInspection: mealType==='LUNCH' ? (publicInspections[school.id] ?? null) : null, mealUseByAt: !saved ? `${date}T${mealType==='BREAKFAST'?'08:15':mealType==='LUNCH'?'12:45':'15:00'}:00+07:00` : null }
+    return { serviceDate: date, mealType, servings: boardDishes.length ? Math.max(...boardDishes.map(dish => dish.expectedQuantity)) : (mealType === 'LUNCH' ? (saved?.servings ?? 0) : 0), suppliers: 4, dishes: selectedDishes, dishDetails, kitchen: central ? 'Bếp trung tâm An Tâm' : 'Bếp ăn nhà trường', photo: plannedPhoto, updatedAt: events.at(-1)?.time ?? eventTimes.READY, events, transportDistanceKm: central ? 12.4 : null, transportDurationMinutes: central ? minutesBetween(dispatchedAt,arrivedAt) : null, publicInspection: mealType==='LUNCH' ? (publicInspections[school.id] ?? null) : null, mealUseByAt: !saved ? `${date}T${mealType==='BREAKFAST'?'08:15':mealType==='LUNCH'?'12:45':'15:00'}:00+07:00` : null }
   },
   kitchenDocuments: async (school: School): Promise<KitchenDocument[]> => {
     await pause()

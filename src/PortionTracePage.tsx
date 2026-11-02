@@ -91,7 +91,6 @@ function TraceDetails({ record, data }: {
     }
   }
   const processStages = [
-    { status: 'PREPARING', code: 'Make', label: 'Bắt đầu chế biến' },
     { status: 'DISPATCHED', code: 'Handover', label: 'Xuất bếp · Đã bàn giao' },
     { status: 'ARRIVED', code: 'Receive', label: 'Đến trường' },
     { status: 'PLATED', code: 'Plated', label: 'Ra món · Chế biến xong' },

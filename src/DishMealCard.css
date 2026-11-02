@@ -5,8 +5,8 @@
   box-shadow:0 2px 8px rgba(19,42,82,.045); color:#10213b;
   transform:none; transition:border-color .18s ease,box-shadow .18s ease,transform .18s ease;
 }
-.boarding-menu-manager:not(.public-view) .rb-dish-spotlight.spotlight-card{height:242px}
-.boarding-menu-manager.public-view .rb-dish-spotlight.spotlight-card{height:244px}
+.boarding-menu-manager:not(.public-view) .rb-dish-spotlight.spotlight-card{min-height:220px}
+.boarding-menu-manager.public-view .rb-dish-spotlight.spotlight-card{min-height:218px}
 .boarding-menu-manager .rb-dish-spotlight.spotlight-card:hover,
 .boarding-menu-manager .rb-dish-spotlight.spotlight-card:focus-within{
   border-color:#98b9e2; box-shadow:0 6px 18px rgba(28,74,128,.12); transform:translateY(-1px);
@@ -21,9 +21,9 @@
   display:flex; flex-direction:column; gap:6px; width:100%; border:0; padding:0;
   text-align:left; background:transparent; color:inherit; cursor:pointer; border-radius:8px;
 }
-.boarding-menu-manager.public-view .rb-dish-spotlight .dish-card-open{height:158px;flex:none}
+.boarding-menu-manager.public-view .rb-dish-spotlight .dish-card-open{min-height:158px;flex:none}
 .rb-dish-spotlight .dish-card-main{display:grid;grid-template-columns:49px minmax(0,1fr);align-items:start;gap:8px;min-width:0;width:100%}
-.boarding-menu-manager.public-view .rb-dish-spotlight .dish-card-main{height:131px;flex:none}
+.boarding-menu-manager.public-view .rb-dish-spotlight .dish-card-main{min-height:131px;flex:none}
 .boarding-menu-manager:not(.public-view) .rb-dish-spotlight .dish-card-main{min-height:74px}
 .boarding-menu-manager .rb-dish-spotlight .calendar-dish-photo{
   display:block; width:49px; height:56px; border-radius:9px; object-fit:cover;
@@ -31,6 +31,18 @@
 }
 .rb-dish-spotlight .dish-card-text{display:flex;flex-direction:column;align-items:flex-start;gap:3px;min-width:0}
 .rb-dish-spotlight .dish-card-number{display:inline-flex;font-size:9px;font-weight:800;letter-spacing:.055em;color:#047857;background:#eafaf2;border-radius:5px;padding:2px 5px}
+/* Phân biệt món BGH đặt mặc định, món thay thế và món phụ huynh đã chọn. */
+.rb-dish-spotlight .dish-meal-type,
+.rb-dish-spotlight .dish-choice-label{
+  display:inline-flex;align-items:center;gap:3px;max-width:100%;padding:3px 6px;
+  border-radius:6px;border:1px solid transparent;font-size:10px;font-weight:800;
+  line-height:1.2;white-space:normal;
+}
+.rb-dish-spotlight .dish-meal-type.default{background:#e5f7ed;border-color:#acdfc4;color:#12633e}
+.rb-dish-spotlight .dish-meal-type.option{background:#f1ecff;border-color:#d2c6f7;color:#5d3d9e}
+.rb-dish-spotlight .dish-choice-label.explicit{background:#e7f2ff;border-color:#afcefc;color:#1458a8}
+.rb-dish-spotlight .dish-choice-label.fallback{background:#f1f5f9;border-color:#d9e1eb;color:#465c78}
+.rb-dish-spotlight .dish-meal-type svg,.rb-dish-spotlight .dish-choice-label svg{flex:none}
 .rb-dish-spotlight .dish-card-name{display:block;font-size:12px;line-height:1.38;letter-spacing:-.01em;font-weight:750;color:#132842;overflow-wrap:break-word}
 .boarding-menu-manager.public-view .rb-dish-spotlight .dish-card-name{display:-webkit-box;overflow:hidden;-webkit-box-orient:vertical;-webkit-line-clamp:3;line-clamp:3}
 .rb-dish-spotlight .dish-card-open:hover .dish-card-name{text-decoration:underline;text-underline-offset:2px;color:#0757ad}
@@ -42,13 +54,8 @@
 .rb-dish-spotlight .dish-card-meta>span{display:inline-flex;align-items:center;gap:3px;color:#52647c;font-size:10px;line-height:1.35;font-weight:650;white-space:nowrap}
 .rb-dish-spotlight .dish-card-meta svg{color:#59728b;flex:none}
 .rb-dish-spotlight .dish-card-bottom{display:flex;align-items:center;justify-content:space-between;gap:6px;min-height:21px}
-.boarding-menu-manager.public-view .rb-dish-spotlight .dish-card-bottom{min-height:33px;flex:none}
 .boarding-menu-manager:not(.public-view) .rb-dish-spotlight .dish-choice-count{display:flex;min-height:28px;align-items:center;justify-content:center;margin:0;text-align:center}
-.boarding-menu-manager:not(.public-view) .rb-dish-spotlight .dish-card-bottom{min-height:54px;align-items:flex-end;margin-top:auto}
-.boarding-menu-manager:not(.public-view) .rb-dish-spotlight .dish-card-status{flex:0 0 45px;min-height:52px;justify-content:center;text-align:center}
-.rb-dish-spotlight .dish-card-status{display:inline-flex;align-items:center;gap:4px;color:#996525;background:#fff6e8;border:1px solid #f4e2be;padding:4px 6px;border-radius:6px;font-weight:650;font-size:9px;line-height:1.25}
-.rb-dish-spotlight .dish-card-status.reported{color:#17627c;background:#e9f7fc;border-color:#b8e3f1}
-.rb-dish-spotlight .dish-card-status svg{flex:none}
+.boarding-menu-manager:not(.public-view) .rb-dish-spotlight .dish-card-bottom{min-height:28px;align-items:flex-end;justify-content:flex-end;margin-top:auto}
 .boarding-menu-manager .rb-dish-spotlight .dish-actions{position:static;display:flex;opacity:1;gap:3px;flex:none}
 .boarding-menu-manager .rb-dish-spotlight .dish-actions button{display:grid;place-items:center;width:26px;height:26px;padding:0}
 .boarding-menu-manager .rb-dish-spotlight .dish-card-open:focus-visible,

@@ -1,10 +1,35 @@
 import { expect, test } from '@playwright/test'
 
+test('parent school-meal overview shows the issued QR for the current dish', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 900 })
+  await page.goto('/')
+
+  const qr = page.getByRole('link', { name: /Mở chi tiết QR món Mì xào gà/ })
+  await expect(qr).toBeVisible()
+  await expect(qr.locator('.journey-ready-qr-code svg')).toBeVisible()
+  await expect(qr.getByText('1 món có QR')).toBeVisible()
+  await expect(page.getByText('QR từng món chưa được phát hành')).toHaveCount(0)
+
+  await qr.click()
+  await expect(page.getByRole('heading', { name: 'Mì xào gà' }).first()).toBeVisible()
+  await expect(page.getByText('MỖI QR · MỘT MÓN ĂN · DEMO')).toBeVisible()
+})
+
 test('safety supervision covers breakfast and lunch with one QR per dish', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 900 })
   await page.goto('/giam-sat')
 
   const mealSwitch = page.getByRole('group', { name: 'Chọn bữa cần giám sát' })
+  const dailyMenu = page.locator('.supervision-daily-menu')
+  await expect(dailyMenu).toBeVisible()
+  await expect(dailyMenu.getByRole('heading', { name: 'Danh sách thực đơn ngày' })).toBeVisible()
+  await expect(page.getByText('HÌNH ẢNH MINH HỌA GIÁM SÁT')).toHaveCount(0)
+  await expect(page.locator('.supervision-daily-menu-grid>article')).toHaveCount(3)
+  await expect(dailyMenu.getByText('Ăn sáng', { exact: true })).toBeVisible()
+  await expect(dailyMenu.getByText('Ăn trưa', { exact: true })).toBeVisible()
+  await expect(dailyMenu.getByText('Ăn xế', { exact: true })).toBeVisible()
+  await expect(dailyMenu.getByText('Mì xào gà', { exact: true })).toBeVisible()
+  await expect(dailyMenu.getByText('320 g/suất', { exact: true })).toBeVisible()
   await expect(mealSwitch.getByRole('button', { name: 'Bữa trưa' })).toHaveAttribute('aria-pressed', 'true')
   await expect(page.locator('.timeline-item').filter({ hasText: 'Sẵn sàng phục vụ' }).getByText('10:45')).toBeVisible()
   await expect(page.getByText(/món có QR/)).toBeVisible()

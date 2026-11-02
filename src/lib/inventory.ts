@@ -1,4 +1,5 @@
 import type { ViewRole } from './store'
+import { readSuppliers } from './suppliers'
 
 export type InventoryMovementType = 'RECEIPT' | 'ISSUE'
 export type InventoryUnit = 'kg' | 'lít' | 'chai'
@@ -52,6 +53,24 @@ export type InventoryRow = InventoryItem & {
   latestMovementAt: string | null
 }
 
+export type SupervisionIngredientOption = {
+  itemId: string
+  ingredientName: string
+  unit: InventoryUnit
+  lotCode: string
+  expiresAt: string
+  supplierId: string
+  supplierName: string
+  supplierContact: string
+}
+
+export type ReceivingReferenceOption = {
+  reference: string
+  ingredientName: string
+  occurredAt: string
+  lotCode: string
+}
+
 export const inventoryItems: InventoryItem[] = [
   {id:'rice-an-phu',schoolId:'an-phu',schoolName:'Tiểu học An Phú',wardId:'ward-binh-hung-hoa',kitchenId:'kitchen-an-tam',kitchenName:'Bếp trung tâm An Tâm',ingredientName:'Gạo thơm',unit:'kg',openingBalance:86,minimumStock:40,lotCode:'DEMO-GAO-1810',expiresAt:'2027-03-20',supplierId:'supplier-rice',origin:'Đồng bằng sông Cửu Long · DEMO'},
   {id:'chicken-an-phu',schoolId:'an-phu',schoolName:'Tiểu học An Phú',wardId:'ward-binh-hung-hoa',kitchenId:'kitchen-an-tam',kitchenName:'Bếp trung tâm An Tâm',ingredientName:'Thịt gà',unit:'kg',openingBalance:28,minimumStock:12,lotCode:'DEMO-GA-1810',expiresAt:'2026-10-20',supplierId:'supplier-meat',origin:'Hóc Môn, TP.HCM · DEMO'},
@@ -62,6 +81,30 @@ export const inventoryItems: InventoryItem[] = [
   {id:'rice-an-khanh',schoolId:'an-khanh',schoolName:'THCS An Khánh',wardId:'ward-binh-hung-hoa',kitchenId:'kitchen-an-khanh',kitchenName:'Bếp ăn THCS An Khánh',ingredientName:'Gạo thơm',unit:'kg',openingBalance:68,minimumStock:32,lotCode:'DEMO-GAO-1610',expiresAt:'2027-03-12',supplierId:'supplier-rice',origin:'Đồng bằng sông Cửu Long · DEMO'},
   {id:'fish-an-khanh',schoolId:'an-khanh',schoolName:'THCS An Khánh',wardId:'ward-binh-hung-hoa',kitchenId:'kitchen-an-khanh',kitchenName:'Bếp ăn THCS An Khánh',ingredientName:'Cá phi lê',unit:'kg',openingBalance:21,minimumStock:10,lotCode:'DEMO-CA-1810',expiresAt:'2026-10-19',supplierId:'supplier-meat',origin:'TP.HCM · DEMO'},
 ]
+
+/**
+ * Danh mục đầu vào cho kiểm thực bước 1. Chỉ lấy nguyên liệu thuộc đúng trường;
+ * thông tin nhà cung cấp là dữ liệu nội bộ để bếp/BGH đối chiếu, không dùng cho
+ * public QR. Production phải thực hiện cùng phép lọc scope ở backend.
+ */
+export function supervisionIngredientCatalog(schoolId: string): SupervisionIngredientOption[] {
+  const suppliers = new Map(readSuppliers().map(supplier => [supplier.id, supplier]))
+  return inventoryItems
+    .filter(item => item.schoolId === schoolId)
+    .map(item => {
+      const supplier = suppliers.get(item.supplierId)
+      return {
+        itemId: item.id,
+        ingredientName: item.ingredientName,
+        unit: item.unit,
+        lotCode: item.lotCode,
+        expiresAt: item.expiresAt,
+        supplierId: item.supplierId,
+        supplierName: supplier?.name ?? 'Chưa cập nhật nhà cung cấp',
+        supplierContact: supplier?.contact ?? 'Chưa cập nhật người cấp',
+      }
+    })
+}
 
 const seedMovements: InventoryMovement[] = [
   {id:'movement-01',itemId:'rice-an-phu',type:'RECEIPT',quantity:50,occurredAt:'2026-10-17T06:35:00+07:00',recordedAt:'2026-10-17T06:37:00+07:00',reference:'DEMO-PN-1710-01',note:'Nhập theo phiếu giao nhận minh họa.',actorId:'kitchen-an-tam.nguyen-lan',actorName:'Nguyễn Thị Lan · Bếp An Tâm',actorRole:'kitchen_staff',demo:true,idempotencyKey:'seed-01'},
@@ -87,6 +130,21 @@ function storedMovements(): InventoryMovement[] {
 }
 
 function allMovements() { return [...seedMovements, ...storedMovements()] }
+
+/** Phiếu tiếp nhận nội bộ theo đúng trường/ngày để liên kết với kiểm thực bước 1. */
+export function receivingReferenceCatalog(schoolId: string, serviceDate: string): ReceivingReferenceOption[] {
+  const scopedItems = new Map(inventoryItems.filter(item => item.schoolId === schoolId).map(item => [item.id, item]))
+  const seen = new Set<string>()
+  return allMovements()
+    .filter(movement => movement.type === 'RECEIPT' && movement.occurredAt.slice(0, 10) === serviceDate && scopedItems.has(movement.itemId))
+    .flatMap(movement => {
+      if (seen.has(movement.reference)) return []
+      seen.add(movement.reference)
+      const item = scopedItems.get(movement.itemId)!
+      return [{ reference: movement.reference, ingredientName: item.ingredientName, occurredAt: movement.occurredAt, lotCode: item.lotCode }]
+    })
+    .sort((a, b) => a.occurredAt.localeCompare(b.occurredAt))
+}
 
 /**
  * Allowlist tối thiểu cho trang QR công khai. Chỉ trả dữ liệu tiếp nhận của

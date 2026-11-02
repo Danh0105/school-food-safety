@@ -1,4 +1,4 @@
-import { CheckCircle2, ClipboardCheck, Eye, FileSearch, Pencil, Scale, Trash2, UsersRound } from 'lucide-react'
+import { CheckCircle2, Check, Eye, FileSearch, Pencil, Scale, Trash2, UsersRound } from 'lucide-react'
 import SpotlightCard from './components/react-bits/SpotlightCard'
 import type { BoardingDish } from './lib/boardingMenu'
 import { dishImage } from './lib/dishImages'
@@ -23,11 +23,9 @@ export default function DishMealCard({ dish, order, canManage, isDefault = false
   const records = dish.ingredientRecords ?? []
   const ingredientCount = Math.max(records.length, dish.ingredients.length)
   const traced = records.filter(item => item.supplier.trim() && item.lotCode.trim()).length
-  const reportedSafety = dish.safetyMonitoring?.threeStep === 'REPORTED'
-    && dish.safetyMonitoring?.retainedSample === 'REPORTED'
   const grams = dish.portionWeightGrams
   return <SpotlightCard
-    className={`calendar-dish rb-dish-spotlight ${isChosen ? 'dish-parent-chosen' : ''}`}
+    className={`calendar-dish rb-dish-spotlight ${isDefault ? 'dish-is-default' : 'dish-is-option'} ${isChosen ? 'dish-parent-chosen' : ''}`}
     theme="light" spotlightColor="#2367c6" spotlightSize={160} intensity={0.09}
     softness={0.88} borderGlow={0.14} proximity={24} smoothing={0.35}
     flare={false} ambient={false}
@@ -37,7 +35,16 @@ export default function DishMealCard({ dish, order, canManage, isDefault = false
       aria-label={`Xem chi tiết ${dish.name}, ${grams != null ? `${grams} gam một suất` : 'chưa cập nhật định lượng'}, ${traced} trên ${ingredientCount} nguyên liệu khai báo nguồn gốc`}>
       <span className="dish-card-main">
         <img className="calendar-dish-photo" src={dishImage(dish.name, dish.mealType, dish.imageUrl)} alt="" loading="lazy" />
-        <span className="dish-card-text"><span className="dish-card-number">{isChosen ? 'ĐANG ÁP DỤNG' : `MÓN ${order}`}</span>{isDefault && <span className="dish-default-badge">Mặc định</span>}<strong className="dish-card-name">{dish.name}</strong></span>
+        <span className="dish-card-text">
+          <span className="dish-card-number">MÓN {order}</span>
+          <span className={`dish-meal-type ${isDefault ? 'default' : 'option'}`}>
+            {isDefault ? <><Check size={11} aria-hidden="true" /> Món mặc định</> : 'Món lựa chọn'}
+          </span>
+          {isChosen && <span className={`dish-choice-label ${explicitChoice ? 'explicit' : 'fallback'}`}>
+            <CheckCircle2 size={11} aria-hidden="true" />{explicitChoice ? 'Đã chọn' : 'Đang áp dụng'}
+          </span>}
+          <strong className="dish-card-name">{dish.name}</strong>
+        </span>
       </span>
       <span className="dish-card-weight"><Scale size={13} aria-hidden="true"/>{grams != null ? `${grams.toLocaleString('vi-VN')} g / suất` : 'Chưa có định lượng'}<Eye size={13} className="dish-card-eye" aria-hidden="true" /></span>
     </button>
@@ -52,13 +59,12 @@ export default function DishMealCard({ dish, order, canManage, isDefault = false
       onClick={onChoose}>
       {isChosen ? <><CheckCircle2 size={14}/>{explicitChoice ? 'Đã chọn' : 'Đang mặc định'}</> : explicitChoice ? 'Đổi món' : 'Chọn món'}
     </button>}
-    <div className="dish-card-bottom">
-      <span className={`dish-card-status ${reportedSafety ? 'reported' : ''}`} title="Đây chỉ là nhật ký khai báo, không phải xác nhận an toàn thực phẩm"><ClipboardCheck size={12} aria-hidden="true" />{reportedSafety ? 'Đã khai báo giám sát' : 'Chưa đủ nhật ký GS'}</span>
-      {canManage && <div className="dish-actions">
+    {canManage && <div className="dish-card-bottom">
+      <div className="dish-actions">
         {!isDefault && onSetDefault && <button className="dish-set-default" type="button" aria-label={`Đặt ${dish.name} làm món mặc định`} title="Đặt món mặc định" onClick={onSetDefault}>☆</button>}
         <button type="button" aria-label={`Chỉnh sửa ${dish.name}`} title="Chỉnh sửa" onClick={onEdit}><Pencil size={14}/></button>
         <button type="button" aria-label={`Xóa ${dish.name}`} title="Xóa món" onClick={onRemove}><Trash2 size={14}/></button>
-      </div>}
-    </div>
+      </div>
+    </div>}
   </SpotlightCard>
 }
