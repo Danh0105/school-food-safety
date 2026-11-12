@@ -1,7 +1,8 @@
 import readyServingDemo from '../assets/ready-service-demo.jpg'
-import { boardingMenuRepository, gradeForSchool } from './boardingMenu'
+import { boardingMenuRepository, defaultMealDish, gradeForSchool, parentMealChoiceRepository } from './boardingMenu'
 import type { BoardingMealType } from './boardingMenu'
 import { dishImage } from './dishImages'
+import { defaultAgeBandForGrade } from './schoolNutrition'
 import { canViewUnconfirmedMealPhotos } from '../../packages/domain/policy'
 import type { Actor, MealPhotoScope } from '../../packages/domain/policy'
 export type School = { id: string; name: string; address: string; mode: 'ON_SITE' | 'CENTRAL_KITCHEN' }
@@ -214,14 +215,21 @@ export const demoData = {
     try {
       boardDishes = boardingMenuRepository.load()
         .filter(dish => dish.schoolId === school.id && dish.gradeLevel === gradeForSchool(school.id)
-          && dish.serviceDate === date && dish.mealType === mealType)
+          && dish.serviceDate === date && dish.mealType === mealType
+          // Công khai tuyệt đối không dùng món nháp/chờ duyệt để hiển thị ở trang chủ.
+          && (!viewer || (viewer.role !== 'parent' && viewer.role !== 'culture_social_office') || dish.status === 'APPROVED'))
         .sort((a, b) => a.priority - b.priority)
     } catch { /* Có thể vẫn hiển thị hành trình, nhưng không thay bằng thực đơn khác nguồn. */ }
     // Tổng quan phụ huynh chỉ trình bày đúng một món đang áp dụng cho mỗi bữa.
     // Các vai trò nội bộ vẫn nhận đủ phương án để quản lý và đối soát.
-    if (viewer?.role === 'parent' && boardDishes.length > 1) {
-      const appliedDish = boardDishes.find(dish => dish.isDefault) ?? boardDishes[0]!
-      boardDishes = [appliedDish]
+    if (viewer?.role === 'parent' && boardDishes.length) {
+      const studentCode = localStorage.getItem(`demo-student-code-${school.id}`) || 'HS-DEMO-01'
+      const gradeLevel = gradeForSchool(school.id)
+      const appliedDish = parentMealChoiceRepository.resolve(boardDishes, {
+        studentCode, schoolId: school.id, gradeLevel, ageBand: defaultAgeBandForGrade(gradeLevel),
+        serviceDate: date, mealType,
+      }).dish ?? defaultMealDish(boardDishes)
+      boardDishes = appliedDish ? [appliedDish] : []
     }
     const selectedDishes = boardDishes.map(dish => dish.name)
     const dishDetails: DishDetail[] = boardDishes.map(dish => ({

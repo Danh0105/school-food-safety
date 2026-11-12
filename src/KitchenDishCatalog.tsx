@@ -1,110 +1,94 @@
 import { useEffect, useMemo, useState } from 'react'
-import type { FormEvent } from 'react'
-import { AlertCircle, Check, ClipboardCheck, FileSearch, ImagePlus, Plus, Scale, Trash2, X } from 'lucide-react'
+import { AlertTriangle, BarChart3, Check, CheckCircle2, ChevronLeft, ChevronRight, Clock3, Eye, FilterX, Grid2X2, Leaf, List, Pencil, Plus, Search, ShieldCheck, SlidersHorizontal, Trash2, X } from 'lucide-react'
 import SpotlightCard from './components/react-bits/SpotlightCard'
+import CountUp from './components/react-bits/CountUp'
+import ClickSpark from './components/react-bits/ClickSpark'
 import type { School } from './lib/data'
 import type { ViewRole } from './lib/store'
 import { useUI } from './lib/store'
-import { inventoryItems } from './lib/inventory'
-import { readSuppliers } from './lib/suppliers'
-import { dishImage, compressDishPhoto } from './lib/dishImages'
-import { gradeForSchool, kitchenDishProposalsRepository, mealTypeOptions, KITCHEN_DISH_PROPOSALS_KEY } from './lib/boardingMenu'
+import { dishImage } from './lib/dishImages'
+import { gradeForSchool, kitchenDishProposalsRepository, KITCHEN_DISH_PROPOSALS_KEY, mealTypeOptions, kitchenDirectoryRepository } from './lib/boardingMenu'
 import type { BoardingMealType, KitchenDishProposal } from './lib/boardingMenu'
-import IngredientTraceDialog from './IngredientTraceDialog'
+import { AGE_BANDS, AGE_BAND_LABEL, ageBandsForGrade } from './lib/schoolNutrition'
+import { analyzeOfficialRecipe as analyzeRecipe } from './lib/officialFoodNutrition'
+import type { SchoolAgeBand } from './lib/schoolNutrition'
+import KitchenDishEditor from './KitchenDishEditor'
 import './KitchenDishCatalog.css'
 
-type IngredientDraft = { inventoryItemId: string; amount: string }
-const today = () => new Date().toLocaleDateString('sv-SE')
-const nowIso = () => new Date().toISOString()
-const fmt = (n: number) => n.toLocaleString('vi-VN', { maximumFractionDigits: 2 })
-const newId = () => typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
-  ? crypto.randomUUID() : `demo-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
+const number = (value: number) => value.toLocaleString('vi-VN', { maximumFractionDigits: 1 })
+const date = (value: string) => { const parsed = new Date(value); return Number.isNaN(parsed.getTime()) ? 'Chưa có' : parsed.toLocaleDateString('vi-VN') }
+const age = (item: KitchenDishProposal): SchoolAgeBand => item.ageBand ?? (item.gradeLevel === 'SECONDARY' ? 'GRADES_6_9' : 'GRADES_1_2')
+const recipe = (item: KitchenDishProposal) => analyzeRecipe(item.ingredientRecords.map(row => ({ name: row.name, amount: row.amountPerServing || 0, unit: row.unit })), age(item), item.mealType)
+const stockComplete = (item: KitchenDishProposal) => item.ingredientRecords.length > 0 && item.ingredientRecords.every(row => !!row.inventoryItemId)
+const mealName = (meal: BoardingMealType) => mealTypeOptions.find(option => option.value === meal)?.label ?? meal
+const PAGE_SIZE = 8
+
+type DisplayMode = 'grid' | 'table'
+type SortMode = 'updated' | 'name' | 'kcal' | 'priority'
 
 export default function KitchenDishCatalog({ school, role }: { school: School; role: ViewRole }) {
   const isKitchen = role === 'central_kitchen' || role === 'school_kitchen'
+  const correctKitchen = role === 'central_kitchen' ? school.mode === 'CENTRAL_KITCHEN' : school.mode === 'ON_SITE'
+  const kitchens = useMemo(() => kitchenDirectoryRepository.load().filter(item => item.active && item.assignedSchoolIds.includes(school.id) && item.type === (role === 'central_kitchen' ? 'CENTRAL_KITCHEN' : 'ON_SITE')), [school.id, role])
+  const canManage = isKitchen && correctKitchen && kitchens.length > 0
   const [proposals, setProposals] = useState<KitchenDishProposal[]>(() => { try { return kitchenDishProposalsRepository.load() } catch { return [] } })
-  const [open, setOpen] = useState(false)
-  const [name, setName] = useState('')
-  const [description, setDescription] = useState('')
-  const [mealType, setMealType] = useState<BoardingMealType>('LUNCH')
-  const [weight, setWeight] = useState('320')
-  const [servings, setServings] = useState('485')
-  const [priority, setPriority] = useState('1')
-  const [imageUrl, setImageUrl] = useState('')
-  const [imageBusy, setImageBusy] = useState(false)
-  const [ingredientRows, setIngredientRows] = useState<IngredientDraft[]>([])
-  const [threeStep, setThreeStep] = useState<'NOT_RECORDED' | 'REPORTED'>('NOT_RECORDED')
-  const [retainedSample, setRetainedSample] = useState<'NOT_RECORDED' | 'REPORTED'>('NOT_RECORDED')
-  const [supervisor, setSupervisor] = useState('')
-  const [recordedAt, setRecordedAt] = useState('')
-  const [safetyNote, setSafetyNote] = useState('')
-  const [error, setError] = useState('')
+  const [editor, setEditor] = useState<{ key: string; value: KitchenDishProposal | null } | null>(null)
+  const [detail, setDetail] = useState<string | null>(null)
+  const [deleting, setDeleting] = useState<string | null>(null)
+  const [query, setQuery] = useState('')
+  const [meal, setMeal] = useState<BoardingMealType | ''>('')
+  const [band, setBand] = useState<SchoolAgeBand | ''>('')
+  const [source, setSource] = useState<'all' | 'linked' | 'missing'>('all')
+  const [sort, setSort] = useState<SortMode>('updated')
+  const [display, setDisplay] = useState<DisplayMode>('grid')
+  const [page, setPage] = useState(1)
   const [success, setSuccess] = useState('')
-  const [traceId, setTraceId] = useState('')
-  const [currentDate] = useState(today)
-  const isCorrectKitchen = role === 'central_kitchen' ? school.mode === 'CENTRAL_KITCHEN' : school.mode === 'ON_SITE'
-  const items = useMemo(() => inventoryItems.filter(item => item.schoolId === school.id && item.unit !== 'chai' && (
-    role === 'central_kitchen' ? item.kitchenId === 'kitchen-an-tam' : role === 'school_kitchen' ? item.kitchenId !== 'kitchen-an-tam' : true
-  )), [role, school.id])
-  const allowed = items.filter(item => item.expiresAt >= currentDate)
-  const recordFor = (id: string) => items.find(item => item.id === id)
-  const suppliers = readSuppliers()
-  const readable = proposals.filter(item => item.schoolId === school.id && (role === 'school_board' || item.createdBy === role))
-  const addRow = () => setIngredientRows(current => [...current, { inventoryItemId: '', amount: '' }])
-  const updateRow = (index: number, update: Partial<IngredientDraft>) => setIngredientRows(current => current.map((item, i) => i === index ? { ...item, ...update } : item))
-  const clear = () => {
-    setName(''); setDescription(''); setMealType('LUNCH'); setWeight('320'); setServings('485'); setPriority('1')
-    setIngredientRows([]); setImageUrl(''); setThreeStep('NOT_RECORDED'); setRetainedSample('NOT_RECORDED')
-    setSupervisor(''); setRecordedAt(''); setSafetyNote(''); setError('')
-  }
+  const [error, setError] = useState('')
   useEffect(() => {
-    const update = () => { try { setProposals(kitchenDishProposalsRepository.load()) } catch { /* giữ dữ liệu hiện tại */ } }
-    const onStorage = (event: StorageEvent) => { if (!event.key || event.key === KITCHEN_DISH_PROPOSALS_KEY) update() }
-    window.addEventListener('storage', onStorage)
-    window.addEventListener('demo-kitchen-dishes-updated', update)
-    return () => { window.removeEventListener('storage', onStorage); window.removeEventListener('demo-kitchen-dishes-updated', update) }
+    const refresh = () => { try { setProposals(kitchenDishProposalsRepository.load()) } catch { setError('Không đọc được danh mục món. Hãy kiểm tra dữ liệu đã lưu.') } }
+    const storage = (event: StorageEvent) => { if (!event.key || event.key === KITCHEN_DISH_PROPOSALS_KEY) refresh() }
+    window.addEventListener('storage', storage)
+    window.addEventListener('demo-kitchen-dishes-updated', refresh)
+    return () => { window.removeEventListener('storage', storage); window.removeEventListener('demo-kitchen-dishes-updated', refresh) }
   }, [])
-  const submit = (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault(); setError('')
-    const count = Number(servings); const grams = Number(weight); const order = Number(priority)
-    if (!isKitchen || !isCorrectKitchen || useUI.getState().role !== role || useUI.getState().schoolId !== school.id) return setError('Không có quyền tạo món ở trường/bếp này.')
-    if (!name.trim() || !description.trim()) return setError('Nhập tên và mô tả món ăn.')
-    if (!Number.isInteger(count) || count <= 0 || !Number.isInteger(order) || order < 0 || !Number.isFinite(grams) || grams <= 0) return setError('Số suất và định lượng phải hợp lệ.')
-    if (!ingredientRows.length) return setError('Chọn ít nhất một nguyên liệu trong kho.')
-    if (ingredientRows.some(row => !row.inventoryItemId || !Number.isFinite(Number(row.amount)) || Number(row.amount) <= 0)) return setError('Từng nguyên liệu phải chọn từ kho và có định lượng lớn hơn 0.')
-    if (new Set(ingredientRows.map(row => row.inventoryItemId)).size !== ingredientRows.length) return setError('Một lô nguyên liệu chỉ được chọn một lần.')
-    if (ingredientRows.some(row => !allowed.some(item => item.id === row.inventoryItemId))) return setError('Có nguyên liệu đã hết hạn hoặc không thuộc kho được phân công.')
-    const kitchenId = items[0]?.kitchenId
-    if (!kitchenId) return setError('Chưa có kho nguyên liệu được gán cho bếp này.')
-    const ingredientRecords = ingredientRows.map(row => {
-      const item = recordFor(row.inventoryItemId)!
-      const supplier = suppliers.find(source => source.id === item.supplierId)
-      return { inventoryItemId: item.id, name: item.ingredientName, amountPerServing: Number(row.amount), unit: (item.unit === 'lít' ? 'ml' : 'g') as 'ml'|'g', supplier: supplier?.name ?? '', lotCode: item.lotCode, origin: item.origin ?? '' }
-    })
-    const now = nowIso()
-    const proposal: KitchenDishProposal = { id: newId(), schoolId: school.id, kitchenId, createdBy: role as 'central_kitchen'|'school_kitchen', mealType, gradeLevel: gradeForSchool(school.id), name: name.trim(), description: description.trim(), imageUrl: imageUrl || undefined, expectedQuantity: count, priority: order, portionWeightGrams: grams, ingredientRecords, safetyMonitoring: { threeStep, retainedSample, supervisor: supervisor.trim(), recordedAt: recordedAt ? new Date(recordedAt).toISOString() : '', note: safetyNote.trim() }, createdAt: now, updatedAt: now, demo: true }
-    try { kitchenDishProposalsRepository.save(proposal); setOpen(false); clear(); setSuccess(`Đã lưu món “${proposal.name}” vào danh mục đề xuất DEMO. Ban Giám hiệu sẽ chọn khi lập thực đơn.`) }
-    catch (caught) { setError(caught instanceof Error ? caught.message : 'Không thể lưu món đề xuất.') }
+  useEffect(() => { setPage(1); setDetail(null); setDeleting(null); setEditor(null); setSuccess(''); setError('') }, [school.id, role])
+  const own = useMemo(() => proposals.filter(item => item.schoolId === school.id && (!isKitchen || item.createdBy === role)), [proposals, school.id, role, isKitchen])
+  const rows = useMemo(() => {
+    const key = query.trim().toLocaleLowerCase('vi')
+    return own.filter(item => (!key || `${item.name} ${item.description} ${item.ingredientRecords.map(row => row.name).join(' ')}`.toLocaleLowerCase('vi').includes(key)) && (!meal || item.mealType === meal) && (!band || age(item) === band) && (source === 'all' || (source === 'linked' ? stockComplete(item) : !stockComplete(item))))
+      .sort((a, b) => sort === 'name' ? a.name.localeCompare(b.name, 'vi') : sort === 'kcal' ? recipe(b).energy - recipe(a).energy : sort === 'priority' ? a.priority - b.priority : b.updatedAt.localeCompare(a.updatedAt))
+  }, [own, query, meal, band, source, sort])
+  const pages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE))
+  const currentPage = Math.min(page, pages)
+  const shown = rows.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
+  const selected = own.find(item => item.id === detail)
+  const pendingDelete = own.find(item => item.id === deleting)
+  const linkedCount = own.filter(stockComplete).length
+  const needsReview = own.length - linkedCount
+  const clearFilters = () => { setQuery(''); setMeal(''); setBand(''); setSource('all'); setSort('updated'); setPage(1) }
+  const openCreate = () => { setError(''); setSuccess(''); if (canManage) setEditor({ key: `create-${Date.now()}`, value: null }) }
+  const openEdit = (value: KitchenDishProposal) => { if (canManage && value.createdBy === role) { setDetail(null); setError(''); setEditor({ key: `${value.id}-${Date.now()}`, value }) } }
+  const saveFinished = (name: string, edited: boolean) => { setEditor(null); setDetail(null); setSuccess(`Đã ${edited ? 'cập nhật' : 'tạo'} món “${name}”. ${edited ? 'Thực đơn đã công bố không tự bị thay đổi.' : 'Món đã sẵn sàng để Ban Giám hiệu xem và lựa chọn.'}`); setError('') }
+  const deleteDish = () => {
+    if (!pendingDelete || !canManage || useUI.getState().role !== role || useUI.getState().schoolId !== school.id) { setError('Không có quyền xóa món này.'); setDeleting(null); return }
+    try { kitchenDishProposalsRepository.remove(pendingDelete.id); setSuccess(`Đã xóa món “${pendingDelete.name}” khỏi danh mục đề xuất. Các thực đơn đã lập không tự thay đổi.`); setError(''); setDeleting(null); setDetail(null) }
+    catch (reason) { setError(reason instanceof Error ? reason.message : 'Không thể xóa món.'); setDeleting(null) }
   }
-  return <section className="kitchen-proposals" aria-label="Danh mục món do bếp đề xuất">
-    <div className="kitchen-proposals-heading"><div><span className="section-kicker">DANH MỤC MÓN ĂN · DỮ LIỆU DEMO</span><h3>Món do bếp đề xuất</h3><p>Bếp tạo công thức và liên kết lô trong kho. Chỉ Ban Giám hiệu được đưa món vào lịch thực đơn.</p></div>
-      {isKitchen && <button type="button" className="primary" onClick={() => { setError(''); setOpen(true) }} disabled={!isCorrectKitchen || !allowed.length}><Plus size={16}/> Tạo món</button>}
+  const cardsActions = (item: KitchenDishProposal) => <div className="dish-card-actions"><button type="button" className="dish-action-view" onClick={() => setDetail(item.id)} aria-label={`Xem chi tiết ${item.name}`}><Eye size={16}/> Xem</button>{canManage && item.createdBy === role && <><button type="button" onClick={() => openEdit(item)} aria-label={`Sửa ${item.name}`}><Pencil size={16}/> Sửa</button><button type="button" className="dish-delete-action" onClick={() => setDeleting(item.id)} aria-label={`Xóa ${item.name}`}><Trash2 size={16}/></button></>}</div>
+  return <section className="dish-catalog" aria-label="Quản lý danh sách món ăn và dinh dưỡng">
+    <div className="dish-catalog-hero"><div><span className="dish-label">DINH DƯỠNG HỌC ĐƯỜNG · {school.name.toLocaleUpperCase('vi')}</span><h2>Danh sách món ăn</h2><p>Quản lý công thức, định lượng và món bếp đề xuất để lập thực đơn trình Ban Giám hiệu duyệt.</p></div>{isKitchen && <ClickSpark sparkColor="#3da89d" sparkSize={6} sparkCount={8} duration={300}><button className="dish-primary dish-create-btn" type="button" onClick={openCreate} disabled={!canManage}><Plus size={18}/> Tạo món mới</button></ClickSpark>}</div>
+    {isKitchen && !canManage && <div role="status" className="dish-notice"><AlertTriangle size={18}/> Vui lòng chọn trường có bếp phù hợp đã được phân công để tạo hoặc quản lý món.</div>}
+    {gradeForSchool(school.id) === 'KINDERGARTEN' && <div className="dish-notice"><AlertTriangle size={18}/> Bộ dữ liệu dinh dưỡng này hiện dành cho Tiểu học và THCS, không áp dụng định mức cho Mầm non.</div>}
+    {success && <div className="dish-toast success" role="status"><CheckCircle2 size={18}/>{success}<button type="button" aria-label="Đóng thông báo" onClick={() => setSuccess('')}><X size={16}/></button></div>}
+    {error && <div className="dish-toast error" role="alert"><AlertTriangle size={18}/>{error}<button type="button" aria-label="Đóng lỗi" onClick={() => setError('')}><X size={16}/></button></div>}
+    <div className="dish-stat-grid"><div className="dish-stat"><div className="dish-stat-icon blue"><List size={20}/></div><span>Tổng số món</span><strong><CountUp to={own.length} duration={0.65} trigger="load"/></strong><small>Công thức đã lưu</small></div><div className="dish-stat"><div className="dish-stat-icon green"><ShieldCheck size={20}/></div><span>Đã gắn đủ mã lô</span><strong><CountUp to={linkedCount} duration={0.65} trigger="load"/></strong><small>Trên dữ liệu kho DEMO</small></div><div className="dish-stat"><div className="dish-stat-icon amber"><AlertTriangle size={20}/></div><span>Cần đối chiếu lô</span><strong><CountUp to={needsReview} duration={0.65} trigger="load"/></strong><small>Chưa xác minh đủ nguồn hàng</small></div></div>
+    <div className="dish-list-panel"><div className="dish-list-title"><div><h3>Kho món ăn đề xuất <span>{rows.length}</span></h3><p>Tìm nhanh theo tên món, mô tả hoặc nguyên liệu</p></div><div className="dish-layout-choice" role="group" aria-label="Chế độ hiển thị"><button type="button" onClick={() => setDisplay('grid')} aria-label="Hiển thị dạng thẻ" aria-pressed={display === 'grid'} className={display === 'grid' ? 'active' : ''}><Grid2X2 size={17}/></button><button type="button" onClick={() => setDisplay('table')} aria-label="Hiển thị dạng bảng" aria-pressed={display === 'table'} className={display === 'table' ? 'active' : ''}><List size={17}/></button></div></div>
+      <div className="dish-toolbar"><label className="dish-search"><Search size={18}/><input type="search" value={query} onChange={event => { setQuery(event.target.value); setPage(1) }} placeholder="Tìm tên món hoặc nguyên liệu…" aria-label="Tìm kiếm món" /></label><label className="dish-filter"><span>Bữa ăn</span><select value={meal} onChange={event => { setMeal(event.target.value as typeof meal); setPage(1) }}><option value="">Tất cả bữa</option>{mealTypeOptions.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label><label className="dish-filter"><span>Nhóm lớp</span><select value={band} onChange={event => { setBand(event.target.value as typeof band); setPage(1) }}><option value="">Tất cả nhóm lớp</option>{AGE_BANDS.filter(item => ageBandsForGrade(gradeForSchool(school.id)).includes(item.id)).map(option => <option key={option.id} value={option.id}>{option.label}</option>)}</select></label><label className="dish-filter"><span>Nguồn hàng</span><select value={source} onChange={event => { setSource(event.target.value as typeof source); setPage(1) }}><option value="all">Tất cả</option><option value="linked">Đã gắn đủ lô</option><option value="missing">Cần đối chiếu</option></select></label><label className="dish-filter"><span><SlidersHorizontal size={13}/> Sắp xếp</span><select value={sort} onChange={event => setSort(event.target.value as SortMode)}><option value="updated">Cập nhật gần nhất</option><option value="name">Tên món (A–Z)</option><option value="kcal">Năng lượng giảm dần</option><option value="priority">Ưu tiên</option></select></label></div>
+      {rows.length === 0 ? <div className="dish-no-results"><div><Leaf size={26}/></div><h3>{own.length ? 'Không tìm thấy món phù hợp' : 'Chưa có món ăn nào'}</h3><p>{own.length ? 'Thử thay đổi các bộ lọc để xem lại danh sách.' : 'Bắt đầu với công thức đầu tiên, khai báo nguyên liệu và định lượng để Ban Giám hiệu có thể lựa chọn.'}</p><div>{own.length ? <button type="button" className="dish-secondary" onClick={clearFilters}><FilterX size={16}/> Xóa bộ lọc</button> : canManage ? <button type="button" className="dish-primary" onClick={openCreate}><Plus size={16}/> Tạo món đầu tiên</button> : null}</div></div> : display === 'grid' ? <div className="dish-grid">{shown.map(item => { const summary = recipe(item); const linked = stockComplete(item); return <SpotlightCard key={item.id} theme="light" className="dish-meal-card" spotlightColor="#3486c0" intensity={0.10} borderGlow={0.12} proximity={28} flare={false} ambient={false}><div className="dish-card-image"><img src={dishImage(item.name, item.mealType, item.imageUrl)} alt={`Ảnh minh họa ${item.name}`}/><span>{mealName(item.mealType)}</span></div><div className="dish-card-content"><div className="dish-card-status"><span className={linked ? 'dish-complete' : 'dish-partial'}>{linked ? <Check size={12}/> : <AlertTriangle size={12}/>} {linked ? 'Đã đối chiếu lô' : 'Thiếu mã lô'}</span></div><h4 title={item.name}>{item.name}</h4><p>{item.description}</p><div className="dish-card-chips"><span>{AGE_BAND_LABEL(age(item))}</span><span>{number(item.portionWeightGrams)} g/suất</span></div><div className="dish-card-nutrition"><span><BarChart3 size={16}/> <b>{number(summary.energy)}{summary.isComplete ? '' : '+'} kcal</b> /suất</span><span>{item.ingredientRecords.length} nguyên liệu</span></div><div className="dish-card-bottom"><small><Clock3 size={13}/> {date(item.updatedAt)}</small>{cardsActions(item)}</div></div></SpotlightCard> })}</div> : <div className="dish-table-wrap"><table className="dish-table"><thead><tr><th>Tên món</th><th>Bữa ăn / Nhóm lớp</th><th>Định lượng</th><th>Dinh dưỡng / suất</th><th>Nguồn hàng</th><th>Cập nhật</th><th>Thao tác</th></tr></thead><tbody>{shown.map(item => { const summary = recipe(item); return <tr key={item.id}><td><div className="dish-table-title"><img src={dishImage(item.name, item.mealType, item.imageUrl)} alt=""/><div><strong>{item.name}</strong><small>{item.ingredientRecords.length} nguyên liệu</small></div></div></td><td>{mealName(item.mealType)}<small>{AGE_BAND_LABEL(age(item))}</small></td><td>{number(item.portionWeightGrams)} g</td><td><b>{number(summary.energy)}{summary.isComplete ? '' : '+'} kcal</b><small>{summary.isComplete ? 'Đã đối chiếu Phụ lục 7' : 'Thiếu dữ liệu'}</small></td><td><span className={stockComplete(item) ? 'dish-complete' : 'dish-partial'}>{stockComplete(item) ? 'Đủ lô' : 'Thiếu lô'}</span></td><td>{date(item.updatedAt)}</td><td>{cardsActions(item)}</td></tr> })}</tbody></table></div>}
+      {rows.length > 0 && <div className="dish-pagination"><span>Hiển thị {(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, rows.length)} / {rows.length} món</span><div><button type="button" disabled={currentPage <= 1} onClick={() => setPage(value => Math.max(1, value - 1))} aria-label="Trang trước"><ChevronLeft size={17}/></button><span>Trang {currentPage}/{pages}</span><button type="button" disabled={currentPage >= pages} onClick={() => setPage(value => Math.min(pages, value + 1))} aria-label="Trang sau"><ChevronRight size={17}/></button></div></div>}
     </div>
-    {isKitchen && !isCorrectKitchen && <p className="demo-note">Hãy chọn trường có mô hình bếp phù hợp để lập món từ kho được phân công.</p>}
-    {success && <div className="kitchen-proposals-success" role="status"><Check size={17}/>{success}</div>}
-    {readable.length ? <div className="kitchen-proposals-grid">{readable.map(item => <SpotlightCard key={item.id} theme="light" className="kitchen-proposal-card" spotlightColor="#2e88bd" intensity={0.10} borderGlow={0.14} proximity={24} flare={false} ambient={false}>
-      <img src={dishImage(item.name,item.mealType,item.imageUrl)} alt={`Ảnh minh họa ${item.name}`} /><div><span className="kitchen-proposal-tag">DEMO · Chờ BGH xếp lịch</span><h4>{item.name}</h4><p>{item.description}</p><small>{fmt(item.portionWeightGrams)} g/suất · {fmt(item.expectedQuantity)} suất · {item.ingredientRecords.length} nguyên liệu kho</small></div>
-    </SpotlightCard>)}</div> : <p className="kitchen-proposals-empty">Chưa có món đề xuất cho trường này.</p>}
-    {open && <div className="kitchen-proposal-backdrop" onMouseDown={e => { if (e.target === e.currentTarget) { setOpen(false); clear() } }}>
-      <div className="kitchen-proposal-modal" role="dialog" aria-modal="true" aria-label="Tạo món từ nguyên liệu trong kho"><header><div><span className="section-kicker">BẾP TẠO CÔNG THỨC MỚI</span><h2>Tạo món ăn</h2></div><button type="button" className="icon-button" aria-label="Đóng" onClick={() => { setOpen(false); clear() }}><X/></button></header>
-      <form onSubmit={submit} className="kitchen-proposal-form"><div className="kitchen-proposal-fields"><label>Tên món ăn <input required maxLength={120} value={name} onChange={e=>setName(e.target.value)} placeholder="Ví dụ: Cháo gà rau củ"/></label><label>Bữa ăn <select value={mealType} onChange={e=>setMealType(e.target.value as BoardingMealType)}>{mealTypeOptions.map(m=><option key={m.value} value={m.value}>{m.label}</option>)}</select></label><label>Khối lượng món sau nấu (g/suất) <input required type="number" min="0.01" step="any" value={weight} onChange={e=>setWeight(e.target.value)}/></label><label>Số suất dự kiến <input required type="number" min="1" step="1" value={servings} onChange={e=>setServings(e.target.value)}/></label><label>Thứ tự ưu tiên <input required type="number" min="0" step="1" value={priority} onChange={e=>setPriority(e.target.value)}/></label><label>Khối lớp <input disabled value={gradeForSchool(school.id) === 'KINDERGARTEN' ? 'Mầm non' : gradeForSchool(school.id) === 'PRIMARY' ? 'Tiểu học' : 'THCS'} readOnly/></label><label className="wide">Mô tả món ăn <textarea value={description} required maxLength={500} onChange={e=>setDescription(e.target.value)}/></label></div>
-        <div className="kitchen-proposal-ingredient-head"><div><h3><Scale size={19}/> Nguyên liệu & định lượng</h3><p>Chỉ được chọn lô trong kho của bếp. Mã lô và nhà cung cấp sẽ tự điền, không nhập tay.</p></div><button type="button" className="outline" onClick={addRow} disabled={!allowed.length}><Plus size={15}/> Thêm nguyên liệu</button></div>
-        {ingredientRows.map((row,index) => { const stock=recordFor(row.inventoryItemId); const supplier=suppliers.find(s=>s.id===stock?.supplierId); return <div className="kitchen-proposal-ingredient" key={index}><div className="kitchen-proposal-fields"><label>Nguyên liệu trong kho <select aria-label={`Chọn nguyên liệu ${index+1}`} required value={row.inventoryItemId} onChange={e=>updateRow(index,{inventoryItemId:e.target.value})}><option value="">Chọn nguyên liệu/lô</option>{items.map(item=><option key={item.id} value={item.id} disabled={item.expiresAt<currentDate}>{item.ingredientName} · {item.lotCode}{item.expiresAt<currentDate?' (hết hạn)':''}</option>)}</select></label><label>Định lượng / suất ({stock?.unit==='lít'?'ml':'g'}) <input type="number" required min="0.01" step="any" value={row.amount} onChange={e=>updateRow(index,{amount:e.target.value})}/></label></div><div className="kitchen-proposal-stock-source"><span>Nhà cung cấp: <strong>{supplier?.name??'Chưa khai báo'}</strong></span><span>Mã lô: <strong>{stock?.lotCode??'Chưa chọn'}</strong></span><span>Xuất xứ: <strong>{stock?.origin??'Chưa khai báo'}</strong></span>{stock&&<button type="button" onClick={()=>setTraceId(stock.id)}><FileSearch size={14}/> Xem hồ sơ</button>}<button type="button" className="danger" onClick={()=>setIngredientRows(current=>current.filter((_,i)=>i!==index))} aria-label={`Xóa nguyên liệu ${index+1}`}><Trash2 size={16}/></button></div></div> })}
-        <div className="kitchen-proposal-photo"><div><h3><ImagePlus size={18}/> Ảnh minh họa món ăn</h3><p>Không thay thế ảnh thực tế khi phục vụ.</p><input type="file" accept="image/jpeg,image/png,image/webp" onChange={async e=>{const f=e.target.files?.[0];if(!f)return;setImageBusy(true);try{setImageUrl(await compressDishPhoto(f));setError('')}catch(ex){setError(ex instanceof Error?ex.message:'Không thể xử lý ảnh')}finally{setImageBusy(false);e.target.value=''}}}/></div><img src={dishImage(name,mealType,imageUrl)} alt="Xem trước món ăn"/></div>
-        <fieldset className="kitchen-proposal-safety"><legend><ClipboardCheck size={18}/> Nhật ký giám sát (chỉ là khai báo DEMO)</legend><div className="kitchen-proposal-fields"><label>Kiểm thực ba bước <select value={threeStep} onChange={e=>setThreeStep(e.target.value as typeof threeStep)}><option value="NOT_RECORDED">Chưa ghi nhận</option><option value="REPORTED">Đã khai báo nội bộ</option></select></label><label>Lưu mẫu thức ăn <select value={retainedSample} onChange={e=>setRetainedSample(e.target.value as typeof retainedSample)}><option value="NOT_RECORDED">Chưa ghi nhận</option><option value="REPORTED">Đã khai báo nội bộ</option></select></label><label>Người ghi nhận <input maxLength={100} value={supervisor} onChange={e=>setSupervisor(e.target.value)}/></label><label>Thời điểm ghi nhận <input type="datetime-local" value={recordedAt} onChange={e=>setRecordedAt(e.target.value)}/></label><label className="wide">Ghi chú <textarea value={safetyNote} maxLength={500} onChange={e=>setSafetyNote(e.target.value)}/></label></div></fieldset>
-        {error&&<p role="alert" className="kitchen-proposal-error"><AlertCircle size={17}/>{error}</p>}
-        <div className="kitchen-proposal-actions"><small>DEMO · Món đề xuất không tự động thay đổi thực đơn do BGH quản lý.</small><button type="button" className="outline" onClick={()=>{setOpen(false);clear()}}>Hủy</button><button className="primary" type="submit" disabled={imageBusy || !allowed.length}><Check size={16}/> Lưu món đề xuất</button></div>
-      </form></div></div>}
-    {traceId && <IngredientTraceDialog stockItem={inventoryItems.find(item=>item.id===traceId)} onClose={()=>setTraceId('')}/>}
+    {selected && <div className="dish-detail-overlay" onMouseDown={event => { if (event.target === event.currentTarget) setDetail(null) }}><section className="dish-detail-dialog" role="dialog" aria-modal="true" aria-labelledby="dish-detail-title"><div className="dish-detail-header"><div><span className="dish-label">CHI TIẾT MÓN ĂN</span><h2 id="dish-detail-title">{selected.name}</h2></div><button className="dish-icon-button" type="button" onClick={() => setDetail(null)} aria-label="Đóng chi tiết"><X size={20}/></button></div><div className="dish-detail-scroll"><img className="dish-detail-image" src={dishImage(selected.name, selected.mealType, selected.imageUrl)} alt={`Ảnh món ${selected.name}`}/><div className="dish-detail-meta"><span>{mealName(selected.mealType)}</span><span>{AGE_BAND_LABEL(age(selected))}</span><span>{number(selected.portionWeightGrams)} g/suất</span><span>{selected.expectedQuantity} suất</span></div><h3>Mô tả & cách chế biến</h3><p className="dish-detail-description">{selected.description}</p><h3>Thành phần / một suất</h3><div className="dish-detail-table-wrap"><table><thead><tr><th>Nguyên liệu</th><th>Định lượng</th><th>Nguồn gốc</th></tr></thead><tbody>{selected.ingredientRecords.map((row, index) => <tr key={index}><td>{row.name}</td><td>{number(row.amountPerServing ?? 0)} {row.unit}</td><td>{row.lotCode ? `${row.lotCode} · ${row.supplier}` : 'Chưa liên kết lô'}</td></tr>)}</tbody></table></div><h3>Chỉ số dinh dưỡng ước tính</h3><div className="dish-detail-nutrients"><div><b>{number(recipe(selected).energy)}{recipe(selected).isComplete ? '' : '+'}</b><small>kcal/suất</small></div>{([['protein','Đạm','g'],['fat','Béo','g'],['carbohydrate','Bột đường','g'],['fiber','Xơ','g'],['calcium','Canxi','mg'],['iron','Sắt','mg']] as const).map(([key,label,unit]) => <div key={key}><b>{number(recipe(selected).totals[key])}</b><small>{label} ({unit})</small></div>)}</div>{!recipe(selected).isComplete && <div className="dish-inline-warning"><AlertTriangle size={16}/> Còn nguyên liệu chưa có hệ số dinh dưỡng; chỉ số trên chưa đại diện tổng đầy đủ.</div>}<h3>Thông tin quản lý</h3><p className="dish-detail-description">Đơn vị tạo: {selected.createdBy === 'central_kitchen' ? 'Bếp trung tâm' : 'Bếp tại trường'} · Tạo ngày {date(selected.createdAt)} · Cập nhật {date(selected.updatedAt)}.</p><p className="dish-detail-description">Xác nhận an toàn thực phẩm: quản lý riêng tại phân hệ Giám sát & an toàn, không được xác nhận tự động từ danh mục.</p></div><footer><button type="button" className="dish-secondary" onClick={() => setDetail(null)}>Đóng</button>{canManage && selected.createdBy === role && <><button type="button" className="dish-secondary danger" onClick={() => setDeleting(selected.id)}><Trash2 size={16}/> Xóa</button><button type="button" className="dish-primary" onClick={() => openEdit(selected)}><Pencil size={16}/> Chỉnh sửa</button></>}</footer></section></div>}
+    {pendingDelete && <div className="dish-confirm-overlay"><section className="dish-confirm-dialog" role="alertdialog" aria-modal="true" aria-labelledby="dish-confirm-title" aria-describedby="dish-confirm-desc"><div className="dish-confirm-icon"><Trash2 size={24}/></div><h2 id="dish-confirm-title">Xóa món ăn?</h2><p id="dish-confirm-desc">Bạn có chắc chắn muốn xóa <b>“{pendingDelete.name}”</b> khỏi danh mục đề xuất? Thao tác này không thể hoàn tác. Các món đã được BGH đưa vào thực đơn trước đó không tự bị xóa.</p><div><button type="button" className="dish-secondary" onClick={() => setDeleting(null)}>Giữ lại món</button><button type="button" className="dish-danger-button" onClick={deleteDish}><Trash2 size={16}/> Xóa món</button></div></section></div>}
+    {editor && <KitchenDishEditor key={editor.key} school={school} role={role} value={editor.value} onClose={() => setEditor(null)} onSaved={saveFinished}/>}
   </section>
 }

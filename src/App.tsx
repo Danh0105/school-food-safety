@@ -69,13 +69,14 @@ import ClickSpark from "./components/react-bits/ClickSpark";
 import { MealJourneyPanel, MealJourneyProgress } from "./MealJourney";
 import KitchenLegalDocuments from "./KitchenLegalDocuments";
 import SupervisionStatusPanel from "./SupervisionStatusPanel";
+import SupervisionMealApproval from "./SupervisionMealApproval";
 import SupervisionJourneyActions from "./SupervisionJourneyActions";
 import { SUPERVISION_JOURNEY_EVENT, stagesForSchool } from "./lib/supervisionJourney";
 import type { SupervisionMealType } from "./lib/supervisionStatus";
 import { compactDateLabel, weekDates, weekdayLabel } from "./lib/dates";
 import IngredientTraceDialog from "./IngredientTraceDialog";
 import type { IngredientPortion } from "./lib/data";
-import { BOARDING_MENU_STORAGE_KEY } from "./lib/boardingMenu";
+import { BOARDING_MENU_STORAGE_KEY, PARENT_MEAL_CHOICES_KEY, PARENT_MEAL_CHOICES_EVENT } from "./lib/boardingMenu";
 import type { BoardingMealType } from "./lib/boardingMenu";
 import { portionQrDemo } from "./lib/portionQr";
 import "./components/react-bits/integration.css";
@@ -84,6 +85,7 @@ const AdminPanel = lazy(() => import("./Admin"));
 const CanteenGallery = lazy(() => import("./CanteenGallery"));
 const PortionTracePage = lazy(() => import("./PortionTracePage"));
 const BoardingMenuManager = lazy(() => import("./BoardingMenuManager"));
+const KitchenDishCatalog = lazy(() => import("./KitchenDishCatalog"));
 const FeedbackForm = lazy(() => import("./FeedbackForm"));
 const roleLabels: Record<ViewRole, string> = {
   parent: "Phụ huynh",
@@ -725,6 +727,7 @@ function SupervisionMealContent({
       </section>
       <SupervisionStatusPanel school={school} date={date} mealType={mealType} role={role} />
       <SupervisionJourneyActions school={school} date={date} mealType={mealType} data={data} role={role} />
+      <SupervisionMealApproval school={school} date={date} mealType={mealType} role={role} />
       <div className="content-grid">
         <MealJourneyPanel
           school={school}
@@ -885,6 +888,16 @@ function Login({ close }: { close: () => void }) {
             }
             onClick={() => {
               void cache.invalidateQueries();
+              // Mặc định mở đúng trường mà bếp được phân công, để lịch và
+              // danh sách món đã duyệt không rỗng khi chuyển không gian DEMO.
+              const currentSchool = useUI.getState().schoolId;
+              if (item.role === "central_kitchen") {
+                useUI.getState().setSchool("an-phu");
+              } else if (item.role === "school_kitchen" && !demoSchools.some(
+                candidate => candidate.id === currentSchool && candidate.mode === "ON_SITE"
+              )) {
+                useUI.getState().setSchool("binh-an");
+              }
               setRole(item.role);
               navigate("/");
               close();
@@ -935,6 +948,7 @@ function Shell() {
       if (
         !event.key ||
         event.key === BOARDING_MENU_STORAGE_KEY ||
+        event.key === PARENT_MEAL_CHOICES_KEY ||
         event.key === "demo-boarding-menu-v2" ||
         event.key === "demo-boarding-menu-v1" ||
         event.key === "demo-admin-meals"
@@ -943,10 +957,12 @@ function Shell() {
     };
     window.addEventListener("storage", onStorage);
     window.addEventListener("demo-boarding-menu-updated", refresh);
+    window.addEventListener(PARENT_MEAL_CHOICES_EVENT, refresh);
     window.addEventListener(SUPERVISION_JOURNEY_EVENT, refresh);
     return () => {
       window.removeEventListener("storage", onStorage);
       window.removeEventListener("demo-boarding-menu-updated", refresh);
+      window.removeEventListener(PARENT_MEAL_CHOICES_EVENT, refresh);
       window.removeEventListener(SUPERVISION_JOURNEY_EVENT, refresh);
     };
   }, [queryClient]);
@@ -963,8 +979,9 @@ function Shell() {
     demoSchools[0]!;
   // Bản công khai của phụ huynh là nguồn đọc chuẩn cho cả năm vai trò, bao gồm quy tắc chỉ hiện ảnh đã duyệt.
   const query = useQuery({
-    queryKey: ["day", school.id, date, role === "parent" ? "parent" : "shared"],
-    queryFn: () => demoData.day(school, date, role === "parent" ? demoMealViewer("parent", school) : undefined),
+    queryKey: ["day", school.id, date, role === "parent" ? "parent" : role === "culture_social_office" ? "supervisor" : "shared"],
+    queryFn: () => demoData.day(school, date,
+      role === "parent" || role === "culture_social_office" ? demoMealViewer(role, school) : undefined),
     enabled: !!schoolQuery.data,
   });
   const parentMealQuery = useQuery({
@@ -999,7 +1016,7 @@ function Shell() {
       Promise.all(
         week.map(async (item) => ({
           date: item,
-          data: await demoData.day(school, item),
+          data: await demoData.day(school, item, demoMealViewer("parent", school)),
         })),
       ),
     enabled:
@@ -1029,7 +1046,11 @@ function Shell() {
       ? navigation
       : role === "culture_social_office"
         ? adminNavigation
-        : adminNav;
+        : role === "school_kitchen"
+          ? [...adminNav.slice(0, 2), { path: "/tao-mon", label: "Tạo món & dinh dưỡng", icon: CookingPot }, ...adminNav.slice(2)]
+          : role === "central_kitchen" && centralKitchenRouteAccess[kitchenRole].includes("/tao-mon")
+            ? [...adminNav.slice(0, 2), { path: "/tao-mon", label: "Tạo món & dinh dưỡng", icon: CookingPot }, ...adminNav.slice(2)]
+            : adminNav;
   const current =
     nav.find((item) => item.path === location.pathname) ?? nav[0]!;
   const displayRole = roleLabels[role];
@@ -1366,7 +1387,7 @@ function Shell() {
           )}
           {role !== "parent" ? (
             <>
-              {!["/giam-sat", "/ho-so-phap-ly"].includes(location.pathname) && (
+              {!["/giam-sat", "/ho-so-phap-ly", "/tao-mon"].includes(location.pathname) && (
                 <Suspense
                   fallback={
                     <div className="loading-grid">
@@ -1447,6 +1468,11 @@ function Shell() {
                   )}
                   {location.pathname === "/ho-so-phap-ly" && (
                     <KitchenLegalDocuments school={school} role={role} />
+                  )}
+                  {location.pathname === "/tao-mon" && (role === "central_kitchen" || role === "school_kitchen") && (
+                    <Suspense fallback={<div className="loading-grid"><div className="skeleton"/></div>}>
+                      <KitchenDishCatalog school={school} role={role}/>
+                    </Suspense>
                   )}
                 </>
               )}
@@ -1622,7 +1648,7 @@ function Shell() {
                                 key={`public-${school.id}-${week[0]}`}
                                 school={school}
                                 selectedDate={date}
-                                managementScope={school.mode}
+                                managementScope="ALL"
                                 readOnly
                                 publicView
                                 publicEntries={weeklyQuery.data ?? []}

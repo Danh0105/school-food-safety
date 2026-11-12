@@ -1,10 +1,12 @@
 import { useUI } from './store'
 import { inventoryItems } from './inventory'
+import { defaultAgeBandForGrade } from './schoolNutrition'
+import type { SchoolAgeBand } from './schoolNutrition'
 
 export type GradeLevel = 'KINDERGARTEN' | 'PRIMARY' | 'SECONDARY' | 'HIGH_SCHOOL'
 export type BoardingMealType = 'BREAKFAST' | 'LUNCH' | 'SNACK'
 export type MealServiceMode = 'ON_SITE' | 'CENTRAL_KITCHEN'
-export type BoardingMenuStatus = 'DRAFT' | 'SUBMITTED'
+export type BoardingMenuStatus = 'DRAFT' | 'SUBMITTED' | 'APPROVED' | 'REJECTED'
 
 export type KitchenProfile = {
   id: string
@@ -44,6 +46,7 @@ export type BoardingDish = {
   id: string
   schoolId: string
   gradeLevel: GradeLevel
+  ageBand?: SchoolAgeBand
   serviceDate: string
   mealType: BoardingMealType
   name: string
@@ -63,6 +66,10 @@ export type BoardingDish = {
   serviceMode: MealServiceMode
   preparationKitchenId: string
   status: BoardingMenuStatus
+  submittedAt?: string
+  reviewedAt?: string
+  reviewedBy?: string
+  reviewNote?: string
   version: number
   createdAt: string
   updatedAt: string
@@ -73,6 +80,8 @@ export type DishTemplate = Pick<BoardingDish, 'name' | 'ingredients' | 'descript
 
 /** Món do bếp đề xuất để BGH đưa vào lịch, không tự sửa thực đơn công khai. */
 export type KitchenDishProposal = {
+  /** Nhóm lớp áp dụng; dữ liệu cũ chưa có trường này vẫn tải được. */
+  ageBand?: SchoolAgeBand
   id: string
   schoolId: string
   kitchenId: string
@@ -154,9 +163,14 @@ export const gradeForSchool = (schoolId: string): GradeLevel =>
  */
 const seedMenu = (): BoardingDish[] => {
   const now = '2026-10-12T08:00:00+07:00'
-  const weeks = Array.from(new Set(['2026-10-12', mondayOfWeek(toIsoDate(new Date()))]))
+  const currentMonday = mondayOfWeek(toIsoDate(new Date()))
+  // DEMO: lịch mẫu hoàn chỉnh cho tuần cố định và tuần trước/hiện tại/tuần sau.
+  // Chỉ để minh họa giao diện, không thay thế phê duyệt của BGH trên dữ liệu thật.
+  const weeks = Array.from(new Set(['2026-10-12', addDays(currentMonday, -7), currentMonday, addDays(currentMonday, 7)]))
   const lunchNames = ['Thịt heo kho trứng', 'Cá sốt cà chua', 'Gà kho gừng', 'Bò xào rau củ', 'Cá thu kho thơm', 'Mì xào gà', 'Cơm chiên rau củ']
   const lunchAlternatives = ['Đậu hũ sốt nấm', 'Trứng hấp thịt rau củ', 'Cá viên sốt rau củ', 'Gà áp chảo sốt nhẹ', 'Thịt viên kho củ quả', 'Bún gà rau xanh', 'Nui xào bò rau củ']
+  const breakfastExtra = ['Nui nấu thịt bằm', 'Bánh cuốn thịt rau']
+  const snackExtra = ['Khoai lang hấp và sữa', 'Phô mai và trái cây']
   const schoolSamples = [
     { id: 'an-phu', grade: 'PRIMARY' as const, mode: 'CENTRAL_KITCHEN' as const, kitchen: 'kitchen-an-tam', servings: 485 },
     { id: 'binh-an', grade: 'KINDERGARTEN' as const, mode: 'ON_SITE' as const, kitchen: 'kitchen-binh-an', servings: 216 },
@@ -166,14 +180,25 @@ const seedMenu = (): BoardingDish[] => {
   for (const school of schoolSamples) {
     for (const monday of weeks) {
       weekFromMonday(monday).forEach((serviceDate, index) => {
-        const workflow = { serviceMode: school.mode, preparationKitchenId: school.kitchen, status: 'DRAFT' as const, version: 1 }
-        const common = { schoolId: school.id, gradeLevel: school.grade, serviceDate, ...workflow, createdAt: now, updatedAt: now, demo: true as const }
+        // Cả 7 ngày × 3 bữa đều có món mẫu được duyệt (và món lựa chọn).
+        // Đây chỉ là trạng thái phê duyệt mô phỏng, không phải phê duyệt thật.
+        // Khi localStorage đã có món do người dùng chỉnh sửa, luồng đọc phía dưới
+        // KHÔNG tự nâng duyệt các món đó.
+        const workflow = { serviceMode: school.mode, preparationKitchenId: school.kitchen, status: 'APPROVED' as BoardingMenuStatus, version: 1 }
+        const common = { schoolId: school.id, gradeLevel: school.grade, ageBand: defaultAgeBandForGrade(school.grade), reviewedBy: 'Dữ liệu mẫu DEMO (không phải xác nhận thật)', reviewedAt: now, reviewNote: 'Chỉ là mẫu giao diện, không phải thực đơn được nhà trường phê duyệt.', serviceDate, ...workflow, createdAt: now, updatedAt: now, demo: true as const }
         items.push({ ...common, id: `demo-${school.id}-${serviceDate}-lunch`, mealType: 'LUNCH', name: lunchNames[index]!, isDefault: true, ingredients: ['Cơm trắng', lunchNames[index]!, 'Canh rau củ'], description: 'Thực đơn bữa trưa minh họa theo kế hoạch tuần.', priority: 1, expectedQuantity: school.servings })
         items.push({ ...common, id: `demo-${school.id}-${serviceDate}-lunch-alt`, mealType: 'LUNCH', name: lunchAlternatives[index]!, ingredients: ['Cơm trắng', lunchAlternatives[index]!, 'Canh rau củ'], description: 'Phương án món bữa trưa minh họa để phụ huynh lựa chọn.', priority: 2, expectedQuantity: school.servings })
+        // Bữa trưa mẫu: 1 món mặc định + 4 món lựa chọn (đủ 5 món/bữa).
+        for (let extra = 0; extra < 3; extra++) {
+          const name = lunchAlternatives[(index + (extra + 1) * 2) % lunchAlternatives.length]!
+          items.push({ ...common, id: `demo-${school.id}-${serviceDate}-lunch-alt-${extra + 2}`, mealType: 'LUNCH', name, ingredients: ['Cơm trắng', name, 'Canh rau củ'], description: 'Món lựa chọn minh họa; chỉ dữ liệu mẫu mới được đánh dấu đã duyệt.', priority: extra + 3, expectedQuantity: school.servings })
+        }
         items.push({ ...common, id: `demo-${school.id}-${serviceDate}-breakfast`, mealType: 'BREAKFAST', name: index % 2 ? 'Bún thịt rau xanh' : 'Cháo gà rau củ', isDefault: true, ingredients: index % 2 ? ['Bún tươi', 'Thịt heo', 'Rau xanh'] : ['Gạo tẻ', 'Thịt gà', 'Cà rốt'], description: 'Bữa sáng minh họa, định lượng chưa được xác minh.', priority: 1, expectedQuantity: school.servings })
         items.push({ ...common, id: `demo-${school.id}-${serviceDate}-breakfast-alt`, mealType: 'BREAKFAST', name: index % 2 ? 'Cháo thịt bằm bí đỏ' : 'Bánh mì trứng rau', ingredients: index % 2 ? ['Gạo tẻ', 'Thịt heo', 'Bí đỏ'] : ['Bánh mì', 'Trứng', 'Rau xanh'], description: 'Phương án bữa sáng minh họa để phụ huynh lựa chọn.', priority: 2, expectedQuantity: school.servings })
+        items.push({ ...common, id: `demo-${school.id}-${serviceDate}-breakfast-alt-2`, mealType: 'BREAKFAST', name: breakfastExtra[index % 2]!, ingredients: ['Nui hoặc bột gạo', 'Thịt', 'Rau củ'], description: 'Món sáng thay thế minh họa cho học sinh.', priority: 3, expectedQuantity: school.servings })
         items.push({ ...common, id: `demo-${school.id}-${serviceDate}-snack`, mealType: 'SNACK', name: index % 2 ? 'Bánh mềm và sữa' : 'Sữa chua và trái cây', isDefault: true, ingredients: index % 2 ? ['Bánh mềm', 'Sữa'] : ['Sữa chua', 'Trái cây theo mùa'], description: 'Bữa xế minh họa theo kế hoạch nhà trường.', priority: 1, expectedQuantity: school.servings })
         items.push({ ...common, id: `demo-${school.id}-${serviceDate}-snack-alt`, mealType: 'SNACK', name: index % 2 ? 'Chè đậu xanh ít ngọt' : 'Bánh chuối và sữa', ingredients: index % 2 ? ['Đậu xanh', 'Sữa'] : ['Bánh chuối', 'Sữa'], description: 'Phương án bữa xế minh họa để phụ huynh lựa chọn.', priority: 2, expectedQuantity: school.servings })
+        items.push({ ...common, id: `demo-${school.id}-${serviceDate}-snack-alt-2`, mealType: 'SNACK', name: snackExtra[index % 2]!, ingredients: ['Thực phẩm chính', 'Sữa hoặc trái cây'], description: 'Món xế thay thế minh họa theo thực đơn tuần.', priority: 3, expectedQuantity: school.servings })
       })
     }
   }
@@ -330,6 +355,10 @@ const demoRecipes: Record<string, readonly DemoRecipeRow[]> = {
   'sua chua va trai cay': [{ name: 'Sữa chua', amount: 90 }, { name: 'Trái cây theo mùa', amount: 60 }],
   'che dau xanh it ngot': [{ name: 'Đậu xanh', amount: 45 }, { name: 'Nước', amount: 90, unit: 'ml' }, { name: 'Đường', amount: 10 }],
   'banh chuoi va sua': [{ name: 'Bánh chuối', amount: 55 }, { name: 'Sữa', amount: 95, unit: 'ml' }],
+  'nui nau thit bam': [{ name: 'Nui', amount: 110 }, { name: 'Thịt heo', amount: 55 }, { name: 'Cà rốt', amount: 35 }, { name: 'Nước dùng', amount: 110, unit: 'ml' }],
+  'banh cuon thit rau': [{ name: 'Bột gạo', amount: 115 }, { name: 'Thịt heo', amount: 55 }, { name: 'Rau xanh', amount: 35 }, { name: 'Nước chấm', amount: 25, unit: 'ml' }],
+  'khoai lang hap va sua': [{ name: 'Khoai lang', amount: 110 }, { name: 'Sữa', amount: 120, unit: 'ml' }],
+  'pho mai va trai cay': [{ name: 'Phô mai', amount: 35 }, { name: 'Trái cây theo mùa', amount: 110 }],
 }
 
 function recipeRows(name: string, mealType: BoardingMealType, fallback: readonly string[]): DemoRecipeRow[] {
@@ -437,6 +466,7 @@ const isBoardingDish = (value: unknown): value is BoardingDish => {
     && (item.demoPortionSampleVersion === undefined || item.demoPortionSampleVersion === 1 || item.demoPortionSampleVersion === 2)
     && (item.ingredientRecords === undefined || (Array.isArray(item.ingredientRecords) && item.ingredientRecords.every(isIngredientRecord)))
     && (item.safetyMonitoring === undefined || isSafetyMonitoring(item.safetyMonitoring))
+    && (item.ageBand === undefined || typeof item.ageBand === 'string')
     && typeof item.description === 'string'
     && typeof item.priority === 'number'
     && Number.isInteger(item.priority)
@@ -446,7 +476,7 @@ const isBoardingDish = (value: unknown): value is BoardingDish => {
     && item.expectedQuantity >= 0
     && serviceModeOptions.some(option => option.value === item.serviceMode)
     && typeof item.preparationKitchenId === 'string'
-    && (item.status === 'DRAFT' || item.status === 'SUBMITTED')
+    && (item.status === 'DRAFT' || item.status === 'SUBMITTED' || item.status === 'APPROVED' || item.status === 'REJECTED')
     && typeof item.version === 'number'
     && Number.isInteger(item.version)
     && item.version > 0
@@ -464,6 +494,7 @@ const migrateDish = (value: unknown): unknown => {
     serviceMode: item.serviceMode ?? (centralKitchen ? 'CENTRAL_KITCHEN' : 'ON_SITE'),
     preparationKitchenId: item.preparationKitchenId ?? (centralKitchen ? 'kitchen-an-tam' : `kitchen-${String(item.schoolId)}`),
     status: item.status ?? 'DRAFT',
+    ageBand: item.ageBand ?? defaultAgeBandForGrade((item.gradeLevel as GradeLevel) || 'PRIMARY'),
     version: item.version ?? 1,
   }
 }
@@ -487,13 +518,15 @@ const isKitchenProfile = (value: unknown): value is KitchenProfile => {
 }
 
 // Lưu trên localStorage chỉ dành cho bản demo; backend production phải xác thực và phân quyền độc lập.
-const requireSchoolBoard = () => { if (useUI.getState().role !== 'school_board') throw new Error('Chỉ Ban Giám hiệu được cập nhật thực đơn.') }
+const requireSchoolBoard = () => { if (useUI.getState().role !== 'school_board') throw new Error('Chỉ Ban Giám hiệu được quản lý danh mục bếp.') }
+const requireMenuManager = () => { if (!['school_board','school_kitchen','central_kitchen'].includes(useUI.getState().role)) throw new Error('Vai trò hiện tại không được cập nhật thực đơn.') }
 
 /** Một lựa chọn riêng cho mỗi học sinh/ngày/bữa. Dữ liệu chỉ mô phỏng trên thiết bị này. */
 export type ParentMealChoice = {
   studentCode: string
   schoolId: string
   gradeLevel: GradeLevel
+  ageBand?: SchoolAgeBand
   serviceDate: string
   mealType: BoardingMealType
   dishId: string
@@ -505,6 +538,41 @@ export const PARENT_MEAL_CHOICES_EVENT = 'demo-parent-meal-choices-updated'
 /** Ngày/bữa chỉ có một mặc định; thực đơn cũ chưa đánh dấu sẽ lấy món có ưu tiên thấp nhất. */
 export const defaultMealDish = (dishes: BoardingDish[]): BoardingDish | undefined =>
   dishes.find(dish => dish.isDefault) ?? [...dishes].sort((a, b) => a.priority - b.priority)[0]
+
+/** Danh sách nổi bật ĐÃ DUYỆT dùng CHUNG cho phụ huynh và bếp, không sao chép fixture.
+ * Nếu tuần đang xem chưa duyệt, chỉ hiển thị ngày lịch sử có nhãn ngày rõ ràng.
+ */
+export function approvedDishHighlights(items: BoardingDish[], scope: {
+  schoolId: string
+  gradeLevel: GradeLevel
+  ageBand: SchoolAgeBand
+  serviceMode: MealServiceMode | 'ALL'
+  week: readonly string[]
+  selectedDate: string
+}, limit = 4): BoardingDish[] {
+  const approved = items.filter(dish => dish.status === 'APPROVED'
+    && dish.schoolId === scope.schoolId && dish.gradeLevel === scope.gradeLevel
+    && (dish.ageBand ?? defaultAgeBandForGrade(dish.gradeLevel)) === scope.ageBand
+    && (scope.serviceMode === 'ALL' || dish.serviceMode === scope.serviceMode))
+  const inWeek = approved.filter(dish => scope.week.includes(dish.serviceDate))
+  const pool = inWeek.length ? inWeek : approved
+  const targetDate = inWeek.some(dish => dish.serviceDate === scope.selectedDate)
+    ? scope.selectedDate
+    : inWeek.length
+      ? [...inWeek].map(dish => dish.serviceDate).sort()[0]
+      : [...approved].map(dish => dish.serviceDate).sort().at(-1)
+  if (!targetDate) return []
+  const day = pool.filter(dish => dish.serviceDate === targetDate)
+  const meal = (type: BoardingMealType) => day.filter(dish => dish.mealType === type).sort((a, b) => a.priority - b.priority)
+  const breakfast = meal('BREAKFAST')
+  const lunch = meal('LUNCH')
+  const snack = meal('SNACK')
+  const favorites = [defaultMealDish(breakfast), defaultMealDish(lunch),
+    lunch.find(dish => dish.id !== defaultMealDish(lunch)?.id), defaultMealDish(snack)]
+    .filter((dish): dish is BoardingDish => !!dish)
+  const rest = [...breakfast, ...lunch, ...snack].filter(dish => !favorites.some(item => item.id === dish.id))
+  return [...favorites, ...rest].slice(0, Math.max(0, limit))
+}
 
 /** Bữa trưa có tối đa 5 món để học sinh chọn một; giữ giới hạn 3 ở sáng/xế. */
 export const maxDishesPerMeal = (mealType: BoardingMealType) => mealType === 'LUNCH' ? 5 : 3
@@ -523,11 +591,11 @@ export const parentMealChoiceRepository = {
   },
   /** Trả về lựa chọn hợp lệ, hoặc món mặc định nếu học sinh chưa chọn/món cũ bị gỡ. */
   resolve(dishes: BoardingDish[], scope: Omit<ParentMealChoice, 'dishId' | 'updatedAt'>) {
-    const valid = dishes.filter(dish => dish.schoolId === scope.schoolId
-      && dish.gradeLevel === scope.gradeLevel && dish.serviceDate === scope.serviceDate
+    const valid = dishes.filter(dish => dish.status === 'APPROVED' && dish.schoolId === scope.schoolId
+      && dish.gradeLevel === scope.gradeLevel && (dish.ageBand ?? defaultAgeBandForGrade(dish.gradeLevel)) === (scope.ageBand ?? defaultAgeBandForGrade(scope.gradeLevel)) && dish.serviceDate === scope.serviceDate
       && dish.mealType === scope.mealType)
     const saved = this.load().find(item => item.studentCode === scope.studentCode
-      && item.schoolId === scope.schoolId && item.gradeLevel === scope.gradeLevel
+      && item.schoolId === scope.schoolId && item.gradeLevel === scope.gradeLevel && (item.ageBand ?? defaultAgeBandForGrade(item.gradeLevel)) === (scope.ageBand ?? defaultAgeBandForGrade(scope.gradeLevel))
       && item.serviceDate === scope.serviceDate && item.mealType === scope.mealType)
     const explicit = valid.find(dish => dish.id === saved?.dishId)
     return { dish: explicit ?? defaultMealDish(valid), explicit: !!explicit, replaced: !!saved && !explicit }
@@ -536,16 +604,129 @@ export const parentMealChoiceRepository = {
     if (useUI.getState().role !== 'parent') throw new Error('Chỉ phụ huynh được chọn món cho học sinh.')
     if (!scope.studentCode.trim() || scope.studentCode.length > 60) throw new Error('Nhập mã học sinh (tối đa 60 ký tự).')
     const dish = boardingMenuRepository.load().find(item => item.id === dishId)
-    if (!dish || dish.schoolId !== scope.schoolId || dish.gradeLevel !== scope.gradeLevel
-      || dish.serviceDate !== scope.serviceDate || dish.mealType !== scope.mealType)
+    if (!dish || dish.status !== 'APPROVED' || dish.schoolId !== scope.schoolId || dish.gradeLevel !== scope.gradeLevel
+      || (dish.ageBand ?? defaultAgeBandForGrade(dish.gradeLevel)) !== (scope.ageBand ?? defaultAgeBandForGrade(scope.gradeLevel)) || dish.serviceDate !== scope.serviceDate || dish.mealType !== scope.mealType)
       throw new Error('Món không còn trong thực đơn của học sinh ở ngày đã chọn.')
     const record: ParentMealChoice = { ...scope, studentCode: scope.studentCode.trim(), dishId, updatedAt: new Date().toISOString() }
     const next = this.load().filter(item => !(item.studentCode === record.studentCode
-      && item.schoolId === record.schoolId && item.gradeLevel === record.gradeLevel
+      && item.schoolId === record.schoolId && item.gradeLevel === record.gradeLevel && (item.ageBand ?? defaultAgeBandForGrade(item.gradeLevel)) === (record.ageBand ?? defaultAgeBandForGrade(record.gradeLevel))
       && item.serviceDate === record.serviceDate && item.mealType === record.mealType))
     localStorage.setItem(PARENT_MEAL_CHOICES_KEY, JSON.stringify([...next, record]))
     window.dispatchEvent(new Event(PARENT_MEAL_CHOICES_EVENT))
   },
+}
+
+/**
+ * Tương thích với dữ liệu DEMO v3 được lưu trước bản lịch tuần có món.
+ * Bản cũ tạo sẵn cùng ID món mẫu nhưng giữ DRAFT, khiến phụ huynh thấy cả
+ * tuần "Chưa cập nhật" dù mục món đã duyệt có thể có dữ liệu khác.
+ *
+ * Chỉ nâng trạng thái cho NHÓM món mẫu nguyên bản: ID, tên, phiên bản, ngày
+ * tạo/cập nhật và mặc định trùng seed; không động tới món do bếp thêm, món
+ * đã sửa, đã gửi duyệt, đã bị từ chối hoặc đã duyệt thực tế.
+ * Không thêm lại món đã xóa khỏi dữ liệu localStorage.
+ */
+export function displayApprovedDemoWeek(existing: BoardingDish[], fixtures: BoardingDish[] = seedMenu()): BoardingDish[] {
+  const sampleById = new Map(fixtures.filter(item => item.status === 'APPROVED').map(item => [item.id, item]))
+  const groupKey = (item: BoardingDish) => [item.schoolId, item.gradeLevel,
+    item.ageBand ?? defaultAgeBandForGrade(item.gradeLevel), item.serviceDate, item.mealType].join(':')
+  const groups = new Map<string, BoardingDish[]>()
+  for (const item of existing) {
+    const key = groupKey(item)
+    groups.set(key, [...(groups.get(key) ?? []), item])
+  }
+  const originalFixture = (item: BoardingDish) => {
+    const sample = sampleById.get(item.id)
+    return !!sample && item.status === 'DRAFT' && item.version === 1
+      && item.createdAt === item.updatedAt && item.createdAt === sample.createdAt
+      && item.name === sample.name && item.isDefault === sample.isDefault
+      && item.schoolId === sample.schoolId && item.gradeLevel === sample.gradeLevel
+      && item.serviceDate === sample.serviceDate && item.mealType === sample.mealType
+      && item.serviceMode === sample.serviceMode && item.preparationKitchenId === sample.preparationKitchenId
+  }
+  const eligibleGroups = new Set([...groups].filter(([, group]) =>
+    group.length > 0 && group.every(originalFixture)).map(([key]) => key))
+  return existing.map(item => {
+    if (!eligibleGroups.has(groupKey(item))) return item
+    const sample = sampleById.get(item.id)!
+    return { ...item, status: 'APPROVED' as const,
+      reviewedAt: sample.reviewedAt, reviewedBy: sample.reviewedBy, reviewNote: sample.reviewNote }
+  })
+}
+
+/**
+ * Chỉ mở rộng nhóm DEMO cũ còn nguyên các món mẫu đã duyệt/bữa.
+ * Không chạm nhóm có món do bếp lập, đã đổi tên, điều chỉnh, bị xóa hay đã xét duyệt thật.
+ * Hàm thuần, không ghi localStorage từ màn hình phụ huynh/BGH chỉ đọc.
+ */
+function appendExtraOptionsToUntouchedDemo(existing: BoardingDish[]): BoardingDish[] {
+  const samples = seedMenu()
+  const byId = new Map(samples.map(item => [item.id, item]))
+  const byGroup = new Map<string, BoardingDish[]>()
+  const groupKey = (item: BoardingDish) => [item.schoolId, item.gradeLevel, item.ageBand, item.serviceDate, item.mealType].join('|')
+  for (const item of existing) {
+    const key = groupKey(item)
+    byGroup.set(key, [...(byGroup.get(key) ?? []), item])
+  }
+  const added: BoardingDish[] = []
+  for (const [key, group] of byGroup) {
+    if (group.length < 1 || group.some(item => {
+      const sample = byId.get(item.id)
+      return !sample || item.status !== 'APPROVED' || item.name !== sample.name
+        || item.isDefault !== sample.isDefault || item.version !== 1
+        || item.createdAt !== sample.createdAt || item.updatedAt !== sample.updatedAt
+        || item.reviewedBy !== sample.reviewedBy
+    })) continue
+    const defaultDish = defaultMealDish(group)
+    if (!defaultDish || !group.some(item => item.id === defaultDish.id && item.isDefault)) continue
+    const fixtureGroup = samples.filter(item => groupKey(item) === key)
+    if (!fixtureGroup.some(item => item.id === defaultDish.id) || fixtureGroup.length <= group.length) continue
+    added.push(...fixtureGroup.filter(item => !group.some(current => current.id === item.id)))
+  }
+  return added.length ? [...existing, ...added] : existing
+}
+
+/**
+ * Nâng cấp DEMO v4: khôi phục các ngày/bữa thiếu của một tuần minh họa cũ
+ * (thường chỉ còn Thứ 7/Chủ nhật do cache cũ). KHÔNG tự duyệt món do bếp tạo.
+ * Chỉ chạy trên tuần có bằng chứng fixture nguyên bản, chưa có món tùy chỉnh,
+ * và bị thiếu nhiều ô. Không bao giờ sửa đè nhóm bữa đã có dữ liệu.
+ * Version marker ngăn việc người dùng xóa món sau nâng cấp bị tạo lại.
+ */
+const DEMO_WEEK_BACKFILL_MARKER = 'demo-boarding-week-backfill-20261105-v2'
+export function fillSparseDemoCalendar(existing: BoardingDish[], fixtures: BoardingDish[]): BoardingDish[] {
+  const fixtureById = new Map(fixtures.map(item => [item.id, item]))
+  const weekKey = (item: BoardingDish) => [item.schoolId, item.gradeLevel,
+    item.ageBand ?? defaultAgeBandForGrade(item.gradeLevel), mondayOfWeek(item.serviceDate)].join('|')
+  const groupKey = (item: BoardingDish) => [weekKey(item), item.serviceDate, item.mealType].join('|')
+  const weeks = new Map<string, BoardingDish[]>()
+  for (const item of existing) {
+    const key = weekKey(item)
+    weeks.set(key, [...(weeks.get(key) ?? []), item])
+  }
+  const existingGroups = new Set(existing.map(groupKey))
+  const recoverableWeeks = new Set<string>()
+  for (const [key, group] of weeks) {
+    const fixtureWeek = fixtures.filter(item => weekKey(item) === key)
+    if (!fixtureWeek.length) continue
+    const coveredMeals = new Set(group.map(groupKey)).size
+    const fixtureMeals = new Set(fixtureWeek.map(groupKey)).size
+    // Tất cả dữ liệu đang có phải đúng nguyên trạng món mẫu đã duyệt; không
+    // trộn món tự tạo, đã sửa, bị từ chối hoặc chờ duyệt vào quá trình phục hồi.
+    const originalOnly = group.every(item => {
+      const sample = fixtureById.get(item.id)
+      return !!sample && item.status === 'APPROVED' && item.version === 1
+        && item.schoolId === sample.schoolId && item.gradeLevel === sample.gradeLevel
+        && item.name === sample.name && item.isDefault === sample.isDefault
+        && item.serviceDate === sample.serviceDate && item.mealType === sample.mealType
+        && item.createdAt === sample.createdAt && item.updatedAt === sample.updatedAt
+        && item.serviceMode === sample.serviceMode && item.preparationKitchenId === sample.preparationKitchenId
+        && item.reviewedBy === sample.reviewedBy
+    })
+    if (originalOnly && coveredMeals > 0 && coveredMeals < Math.min(15, fixtureMeals)) recoverableWeeks.add(key)
+  }
+  const additions = fixtures.filter(item => recoverableWeeks.has(weekKey(item)) && !existingGroups.has(groupKey(item)))
+  return additions.length ? [...existing, ...additions] : existing
 }
 
 export const boardingMenuRepository = {
@@ -555,32 +736,95 @@ export const boardingMenuRepository = {
     if (!raw && !legacyRaw) return seedMenu().map(withDemoPortionSamples)
     const parsed: unknown = JSON.parse(raw ?? legacyRaw!)
     const migratedValue = Array.isArray(parsed) ? parsed.map(migrateDish) : parsed
+    const currentWeek = mondayOfWeek(toIsoDate(new Date()))
+    const legacyLastDate = Array.isArray(migratedValue)
+      ? migratedValue.reduce((latest, item) => isBoardingDish(item) && item.serviceDate > latest ? item.serviceDate : latest, '')
+      : ''
+    const samples = seedMenu()
+    // Dữ liệu v1/v2 chưa đủ 3 bữa; chỉ bổ sung fixture DEMO không trùng ID.
     const migrated = !raw && Array.isArray(migratedValue)
-      ? [...migratedValue, ...seedMenu().filter(seed => seed.mealType !== 'LUNCH' && !migratedValue.some(item => isBoardingDish(item) && item.id === seed.id))]
+      ? [...migratedValue, ...samples.filter(seed =>
+        !migratedValue.some(item => isBoardingDish(item) && item.id === seed.id)
+        && (seed.mealType !== 'LUNCH' || (legacyLastDate < currentWeek && seed.serviceDate >= currentWeek)))]
       : migratedValue
     if (!Array.isArray(migrated) || !migrated.every(isBoardingDish)) throw new Error('Dữ liệu thực đơn DEMO trên trình duyệt không đúng định dạng.')
-    // Bản DEMO cũ có thể chỉ chứa tuần 12/10. Mở rộng mẫu cho tuần hiện tại
-    // khi chưa hề có thực đơn tuần này, nhưng KHÔNG bổ sung vào tuần đã được BGH sửa/xóa.
-    if (migrated.length > 0) {
-      const currentWeek = mondayOfWeek(toIsoDate(new Date()))
-      const lastDate = migrated.reduce((latest, dish) => dish.serviceDate > latest ? dish.serviceDate : latest, '')
-      if (lastDate < currentWeek) {
-        return [...migrated, ...seedMenu().filter(dish => dish.serviceDate >= currentWeek)].map(withDemoPortionSamples)
-      }
+    if (migrated.length === 0) return samples.map(withDemoPortionSamples)
+
+    // Bản cũ chỉ có tuần 12/10: bổ sung tuần hiện tại khi chưa có dữ liệu
+    // thuộc giai đoạn này. Không thay đổi nhóm ngày/bữa đã nhập hoặc đã duyệt.
+    const lastDate = migrated.reduce((latest, dish) => dish.serviceDate > latest ? dish.serviceDate : latest, '')
+    const withCurrentWeek = lastDate < currentWeek
+      ? [...migrated, ...samples.filter(dish => dish.serviceDate >= currentWeek && !migrated.some(old => old.id === dish.id))]
+      : migrated
+    const needsDemoMigration = localStorage.getItem(DEMO_WEEK_BACKFILL_MARKER) !== '1'
+    const approved = displayApprovedDemoWeek(withCurrentWeek, samples)
+    // Chỉ mở rộng món lựa chọn cũ trong lần di trú đầu tiên.
+    const normalized = (needsDemoMigration ? appendExtraOptionsToUntouchedDemo(approved) : approved).map(withDemoPortionSamples)
+
+    // Phục hồi các ngày trống thuộc tuần DEMO cũ đã lưu, chỉ khi nhóm tuần
+    // còn nguyên mẫu và thiếu phần lớn bữa; duyệt thật vẫn do BGH quyết định.
+    // Chỉ chạy một lần ở marker v2, không lặp sau khi người dùng chỉnh/sửa/xóa.
+    if (needsDemoMigration) {
+      const repaired = fillSparseDemoCalendar(normalized, samples)
+      try {
+        if (repaired.length !== normalized.length || !raw) {
+          localStorage.setItem(BOARDING_MENU_STORAGE_KEY, JSON.stringify(repaired))
+        }
+        localStorage.setItem(DEMO_WEEK_BACKFILL_MARKER, '1')
+      } catch { /* Nếu trình duyệt hết dung lượng, vẫn hiển thị dữ liệu đã phục hồi trong phiên này. */ }
+      return repaired
     }
-    return migrated.map(withDemoPortionSamples)
+    return normalized
   },
   save(items: BoardingDish[]) {
-    requireSchoolBoard()
+    requireMenuManager()
     if (!items.every(isBoardingDish)) throw new Error('Dữ liệu thực đơn không hợp lệ.')
     const groups = new Map<string, BoardingDish[]>()
     for (const dish of items) {
-      const key = [dish.schoolId, dish.gradeLevel, dish.serviceDate, dish.mealType].join(':')
+      const key = [dish.schoolId, dish.gradeLevel, dish.ageBand ?? defaultAgeBandForGrade(dish.gradeLevel), dish.serviceDate, dish.mealType].join(':')
       groups.set(key, [...(groups.get(key) ?? []), dish])
     }
     for (const group of groups.values()) {
       if (group.length > maxDishesPerMeal(group[0]!.mealType)) throw new Error('Vượt quá số món cho phép trong một ngày/bữa.')
       if (group.filter(dish => dish.isDefault).length > 1) throw new Error('Mỗi bữa/ngày chỉ được chọn một món mặc định.')
+    }
+    // Đây chỉ là kiểm soát ở frontend DEMO. Backend production phải xác thực token,
+    // vai trò BGH, phạm vi trường, trạng thái trước/sau và ghi audit trong giao dịch DB.
+    const {role,schoolId} = useUI.getState()
+    if (role === 'school_board') {
+      const previous = this.load()
+      const previousById = new Map(previous.map(item => [item.id, item]))
+      if (items.length !== previous.length) throw new Error('Ban Giám hiệu không được tạo hoặc xóa món khi duyệt.')
+      for (const item of items) {
+        const old = previousById.get(item.id)
+        if (!old) throw new Error('Món chưa có trong thực đơn, không thể duyệt.')
+        if (JSON.stringify(item) === JSON.stringify(old)) continue
+        if (item.schoolId !== schoolId || old.schoolId !== schoolId || old.status !== 'SUBMITTED'
+          || (item.status !== 'APPROVED' && item.status !== 'REJECTED')) {
+          throw new Error('Ban Giám hiệu chỉ được duyệt hoặc trả lại món đã gửi trong trường phụ trách.')
+        }
+        // Không cho sửa âm thầm tên, ngày, bữa, định lượng, món mặc định, bếp...
+        // trong cùng thao tác xét duyệt.
+        const oldDetails = { ...old, status: undefined, reviewedAt: undefined, reviewedBy: undefined, reviewNote: undefined, updatedAt: undefined }
+        const nextDetails = { ...item, status: undefined, reviewedAt: undefined, reviewedBy: undefined, reviewNote: undefined, updatedAt: undefined }
+        if (JSON.stringify(oldDetails) !== JSON.stringify(nextDetails))
+          throw new Error('Duyệt thực đơn chỉ thay đổi trạng thái và nhật ký xét duyệt của món.')
+        if (!item.reviewedAt || !item.reviewedBy?.trim()
+          || (item.status === 'REJECTED' && !item.reviewNote?.trim()))
+          throw new Error('Thiếu thông tin nhật ký hoặc lý do trả lại món.')
+      }
+    } else {
+      const previous = this.load()
+      const previousById = new Map(previous.map(item => [item.id,item]))
+      const changed = items.filter(item => JSON.stringify(item) !== JSON.stringify(previousById.get(item.id)))
+      if(changed.some(item => item.status === 'APPROVED'))
+        throw new Error('Bếp không được sửa hoặc phê duyệt thực đơn đã duyệt.')
+      if(changed.some(item => item.status !== 'DRAFT' && item.status !== 'SUBMITTED' && item.status !== 'REJECTED'))
+        throw new Error('Trạng thái thực đơn không hợp lệ.')
+      if(changed.some(item => item.schoolId !== schoolId || (role === 'central_kitchen' && item.serviceMode !== 'CENTRAL_KITCHEN') || (role === 'school_kitchen' && item.serviceMode !== 'ON_SITE')))
+        throw new Error('Bếp không được thay đổi thực đơn ngoài phạm vi phụ trách.')
+      if(previous.some(old => !items.some(item => item.id === old.id) && (old.status === 'APPROVED' || old.schoolId !== schoolId || (role==='central_kitchen' && old.serviceMode !== 'CENTRAL_KITCHEN') || (role==='school_kitchen' && old.serviceMode !== 'ON_SITE'))))
+        throw new Error('Bếp không được xóa món đã duyệt.')
     }
     localStorage.setItem(BOARDING_MENU_STORAGE_KEY, JSON.stringify(items))
     window.dispatchEvent(new Event('demo-boarding-menu-updated'))
@@ -604,12 +848,13 @@ export const kitchenDirectoryRepository = {
   seed: seedKitchens,
 }
 
-/** Dữ liệu món bếp đề xuất tách biệt thực đơn BGH. Không nâng vai trò bếp thành người lập lịch. */
+/** Danh mục món của bếp để tái sử dụng khi chính bếp lập lịch và gửi BGH duyệt. */
 const isKitchenDishProposal = (value: unknown): value is KitchenDishProposal => {
   if (!value || typeof value !== 'object') return false
   const p = value as Record<string, unknown>
   return typeof p.id === 'string' && typeof p.schoolId === 'string' && typeof p.kitchenId === 'string'
     && (p.createdBy === 'central_kitchen' || p.createdBy === 'school_kitchen')
+    && (p.ageBand === undefined || ['GRADES_1_2','GRADES_3_5','GRADES_3_4','GRADES_5','AGES_10_11','GRADES_6_9','GRADES_10_12'].includes(String(p.ageBand)))
     && mealTypeOptions.some(v => v.value === p.mealType) && gradeOptions.some(v => v.value === p.gradeLevel)
     && typeof p.name === 'string' && p.name.trim().length > 0 && typeof p.description === 'string'
     && (p.imageUrl === undefined || (typeof p.imageUrl === 'string' && (p.imageUrl === '' || /^data:image\/jpeg;base64,/.test(p.imageUrl))))
@@ -617,7 +862,7 @@ const isKitchenDishProposal = (value: unknown): value is KitchenDishProposal => 
     && typeof p.priority === 'number' && Number.isInteger(p.priority) && p.priority >= 0
     && typeof p.portionWeightGrams === 'number' && Number.isFinite(p.portionWeightGrams) && p.portionWeightGrams > 0
     && Array.isArray(p.ingredientRecords) && p.ingredientRecords.length > 0
-    && p.ingredientRecords.every(row => isIngredientRecord(row) && !!row.inventoryItemId && row.amountPerServing !== null)
+    && p.ingredientRecords.every(row => isIngredientRecord(row) && !!row.name.trim() && row.amountPerServing !== null)
     && isSafetyMonitoring(p.safetyMonitoring) && typeof p.createdAt === 'string'
     && typeof p.updatedAt === 'string' && p.demo === true
 }
@@ -639,11 +884,25 @@ export const kitchenDishProposalsRepository = {
     if (!kitchen || kitchen.type !== (role === 'central_kitchen' ? 'CENTRAL_KITCHEN' : 'ON_SITE')) throw new Error('Không được tạo món cho bếp ngoài phạm vi.')
     const stock = inventoryItems.filter(item => item.schoolId === schoolId && item.kitchenId === proposal.kitchenId)
     const today = toIsoDate(new Date())
-    if (proposal.ingredientRecords.some(record => !stock.some(item => item.id === record.inventoryItemId && item.ingredientName === record.name && item.lotCode === record.lotCode && item.expiresAt >= today))) {
-      throw new Error('Nguyên liệu phải chọn từ lô kho của bếp được phân công.')
+    if (proposal.ingredientRecords.some(record => record.inventoryItemId ? !stock.some(item => item.id === record.inventoryItemId && item.ingredientName === record.name && item.lotCode === record.lotCode && item.expiresAt >= today) : Boolean(record.lotCode || record.supplier || record.origin))) {
+      throw new Error('Lô nguyên liệu phải thuộc kho hợp lệ; nguyên liệu chưa gắn lô không được khai báo chứng từ giả.')
     }
+    const existing = this.load().find(item => item.id === proposal.id)
+    if (existing && (existing.schoolId !== schoolId || existing.kitchenId !== proposal.kitchenId || existing.createdBy !== role || existing.createdAt !== proposal.createdAt)) throw new Error('Không thể ghi đè món ngoài quyền quản lý hoặc thay đổi lịch sử tạo món.')
     const next = this.load().filter(item => item.id !== proposal.id)
     localStorage.setItem(KITCHEN_DISH_PROPOSALS_KEY, JSON.stringify([...next, proposal]))
+    window.dispatchEvent(new Event('demo-kitchen-dishes-updated'))
+  },
+  remove(id: string): void {
+    const { role, schoolId } = useUI.getState()
+    if (role !== 'central_kitchen' && role !== 'school_kitchen') throw new Error('Chỉ tài khoản bếp được xóa món.')
+    const dishes = this.load()
+    const dish = dishes.find(item => item.id === id)
+    if (!dish) throw new Error('Món không còn trong danh sách. Vui lòng tải lại.')
+    if (dish.schoolId !== schoolId || dish.createdBy !== role) throw new Error('Không được xóa món ngoài phạm vi bếp.')
+    const kitchen = kitchenDirectoryRepository.load().find(item => item.id === dish.kitchenId && item.active && item.assignedSchoolIds.includes(schoolId))
+    if (!kitchen || kitchen.type !== (role === 'central_kitchen' ? 'CENTRAL_KITCHEN' : 'ON_SITE')) throw new Error('Bếp chưa được cấp quyền quản lý món này.')
+    localStorage.setItem(KITCHEN_DISH_PROPOSALS_KEY, JSON.stringify(dishes.filter(item => item.id !== id)))
     window.dispatchEvent(new Event('demo-kitchen-dishes-updated'))
   },
 }

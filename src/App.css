@@ -695,3 +695,21 @@ form .feedback-photo-picker.disabled{cursor:not-allowed;opacity:.6}
 .supervision-stage-footnote{padding:13px 24px;border-top:1px solid var(--border);color:var(--muted);font-size:11px;line-height:1.6;background:var(--surface-alt)}
 @media(max-width:1000px){.supervision-stage-rows{grid-template-columns:1fr}}
 @media(max-width:600px){.supervision-stage-rows{margin:0 15px 14px}.supervision-stage-row{flex-wrap:wrap}.supervision-stage-row .supervision-check-controls{max-width:none;width:100%;justify-content:flex-start;padding-left:46px}.supervision-stage-footnote{padding:13px 15px}}
+
+/* Xác nhận tổng thể của BGH trong Giám sát & an toàn theo bữa. */
+.supervision-meal-approval{display:grid;gap:14px}
+.supervision-meal-approval .card-header h2{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.supervision-meal-approval .card-header .primary{display:inline-flex;align-items:center;justify-content:center;gap:8px;white-space:nowrap}
+.supervision-approval-summary{display:flex;align-items:center;gap:12px 20px;flex-wrap:wrap;color:var(--muted);font-size:12px}
+.supervision-approval-summary strong{color:var(--text)}
+.supervision-approval-pending{border:1px solid var(--border);background:var(--surface-alt);border-radius:11px;padding:13px 16px;font-size:12px;color:var(--muted)}
+.supervision-approval-pending strong{color:var(--text)}
+.supervision-approval-pending ul{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:6px 24px;margin:10px 0 0;padding-left:20px}
+.supervision-approval-confirmation{display:flex;align-items:flex-start;gap:8px;font-size:12px;color:#287046;line-height:1.6}
+.supervision-approval-confirmation svg{flex:0 0 auto}
+.supervision-approval-warning,.supervision-approval-readonly{font-size:12px;color:var(--muted);line-height:1.6}
+.supervision-approval-warning{color:#a64b39}
+.supervision-approval-history{font-size:12px}
+.supervision-approval-history ol{padding-left:24px;margin-top:8px;color:var(--muted);line-height:1.75}
+.supervision-approval-disclaimer{font-size:11px;color:var(--muted);line-height:1.65;border-top:1px solid var(--border);padding-top:12px}
+@media(max-width:600px){.supervision-meal-approval .card-header{flex-direction:column}.supervision-meal-approval .card-header .primary{width:100%}.supervision-approval-pending ul{grid-template-columns:1fr}}

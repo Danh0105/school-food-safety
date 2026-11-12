@@ -515,16 +515,8 @@
 .preview-dialog li .preview-dish-trigger span{grid-row:1;grid-column:2}
 .preview-dialog li small{grid-column:1;margin-left:90px}
 
-/* Phụ huynh chọn món theo học sinh trực tiếp trên bảng thực đơn tuần. */
-.parent-weekly-student{display:flex;align-items:center;gap:13px;flex-wrap:wrap;padding:13px 17px;border:1px solid #b9d7ee;border-radius:14px;background:#eef7ff;color:#183b63}
-.parent-weekly-student-copy{flex:1 1 270px;display:flex;flex-direction:column;gap:3px}
-.parent-weekly-student-copy strong{font-size:14px}
-.parent-weekly-student-copy span{font-size:12px;color:#49657e;line-height:1.45}
-.parent-weekly-student>label{display:flex;flex-direction:column;gap:4px;flex:0 1 175px;font-size:11px;font-weight:750}
-.parent-weekly-student>label input{box-sizing:border-box;width:100%;min-height:36px;padding:7px 9px;border:1px solid #abc7dd;border-radius:9px;background:#fff;color:#153752;font:inherit;font-size:13px}
-.parent-weekly-student>small{width:100%;color:#57738d;font-size:11px}
+/* Phản hồi lỗi khi phụ huynh đổi món từ lịch tuần. */
 .parent-weekly-choice-error{padding:10px 13px;border:1px solid #e9b4ab;border-radius:9px;background:#fff2ef;color:#9c372e;font-size:12px}
-@media(max-width:760px){.parent-weekly-student{padding:12px}.parent-weekly-student>label{flex:1 1 100%;max-width:100%}}
 
 /* Phụ huynh chỉ xem món đang áp dụng; các phương án khác được gom trong popup đổi món. */
 .parent-change-dish{display:flex;align-items:center;justify-content:center;gap:5px;min-height:36px;width:100%;padding:7px 8px;border:1px solid #b8cfea;border-radius:9px;background:#edf5ff;color:#15599d;font-size:10px;font-weight:800;line-height:1.2}
@@ -538,6 +530,11 @@
 .parent-choice-dialog>header p{margin-top:4px;color:var(--muted);font-size:12px;text-transform:capitalize}
 .parent-choice-dialog-summary{display:flex;align-items:center;gap:10px;margin:16px 20px 4px;padding:12px 13px;border-radius:11px;background:var(--primary-soft);color:var(--primary)}
 .parent-choice-dialog-summary>span{display:grid;gap:2px}.parent-choice-dialog-summary strong{font-size:12px}.parent-choice-dialog-summary small{color:var(--muted);font-size:10px}
+.parent-choice-student-field{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:10px 20px 0;color:var(--text);font-size:12px;font-weight:750}
+.parent-choice-student-field input{box-sizing:border-box;min-height:36px;width:min(220px,64%);padding:7px 10px;border:1px solid var(--border);border-radius:9px;background:var(--surface);color:var(--text);font:inherit;font-size:13px;font-weight:500}
+.parent-choice-student-field input:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+.parent-choice-inline-error{margin:8px 20px 0}
+@media(max-width:760px){.parent-choice-student-field{margin:10px 16px 0}.parent-choice-inline-error{margin:8px 16px 0}}
 .parent-choice-dialog-list{display:grid;gap:9px;min-height:0;overflow-y:auto;padding:12px 20px 20px}
 .parent-choice-dialog-list>button{display:grid;grid-template-columns:70px minmax(0,1fr) auto;align-items:center;gap:12px;min-height:82px;padding:10px;border:1px solid var(--border);border-radius:13px;background:var(--surface);text-align:left;color:var(--text)}
 .parent-choice-dialog-list>button:not(:disabled):hover{border-color:#7ba9dc;background:#f7fbff;filter:none}
@@ -549,3 +546,269 @@
 .parent-choice-dialog>footer{display:flex;align-items:flex-start;gap:7px;padding:13px 20px max(13px,env(safe-area-inset-bottom));border-top:1px solid var(--border);background:var(--surface-alt);color:var(--muted);font-size:10px;line-height:1.5}.parent-choice-dialog>footer svg{flex:none;margin-top:1px}
 @media(max-width:760px){.parent-change-dish{min-height:40px;font-size:11px}.parent-change-dish small{font-size:10px}.parent-choice-dialog{height:100dvh;max-height:none}.parent-choice-dialog>header{padding:18px 16px}.parent-choice-dialog>header h2{font-size:21px}.parent-choice-dialog>header p{font-size:13px}.parent-choice-dialog-summary{margin:14px 16px 3px}.parent-choice-dialog-summary strong{font-size:13px}.parent-choice-dialog-summary small{font-size:11px}.parent-choice-dialog-list{padding:11px 16px 20px}.parent-choice-dialog-list>button{grid-template-columns:66px minmax(0,1fr);gap:10px}.parent-choice-dialog-list img{width:66px;height:62px}.parent-choice-current,.parent-choice-select{grid-column:2;justify-self:start}.parent-choice-dialog>footer{font-size:11px}}
 @media(prefers-reduced-motion:reduce){.parent-change-dish{transition:none}}
+
+/* Goi y mot vai mon da duyet, dong bo voi du lieu duyet cua BGH. */
+.boarding-menu-manager .parent-approved-menu{
+  display:grid;gap:12px;padding:16px;border:1px solid #b8ded2;border-radius:16px;
+  background:linear-gradient(150deg,#f0faf6 0%,#fff 75%);box-shadow:0 2px 12px rgba(3,92,72,.04)
+}
+.parent-approved-heading{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.parent-approved-heading>div{min-width:0;flex:1 1 300px}
+.parent-approved-heading h3{display:flex;gap:8px;align-items:center;margin:5px 0;color:#134e46;font-size:16px;line-height:1.35}
+.parent-approved-heading h3 svg{flex:none;color:#0c816a}
+.parent-approved-heading p{margin:2px 0 0;color:#50677b;font-size:12px;line-height:1.55}
+.parent-approved-view-week{display:inline-flex;align-items:center;gap:3px;padding:8px 10px;border:1px solid #afd9cb;border-radius:9px;background:#fff;color:#076f5b;font-size:11px;font-weight:750;cursor:pointer}
+.parent-approved-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.parent-approved-dish{display:flex;flex-direction:column;gap:9px;min-width:0;padding:11px;border:1px solid #dbe8e3;border-radius:13px;background:#fff;box-shadow:0 2px 8px rgba(18,67,57,.035)}
+.parent-approved-details{display:grid;grid-template-columns:58px minmax(0,1fr);gap:10px;align-items:center;width:100%;padding:0;border:0;background:transparent;text-align:left;cursor:pointer;color:#18314b}
+.parent-approved-details img{display:block;width:58px;height:65px;border-radius:9px;object-fit:cover;background:#edf8f2}
+.parent-approved-copy{display:grid;gap:5px;min-width:0}
+.parent-approved-copy>strong{font-size:13px;line-height:1.4;overflow-wrap:anywhere}
+.parent-approved-copy>small{font-size:10px;color:#5b7184}
+.parent-approved-tags{display:flex;flex-wrap:wrap;gap:4px}
+.parent-approved-tags small{display:inline-flex;align-items:center;gap:2px;border-radius:5px;padding:3px 5px;font-size:9px;font-weight:800;line-height:1.3}
+.parent-approved-tags .approved,.parent-approved-tags .default{background:#e4f7ec;color:#106344;border:1px solid #aedfc6}
+.parent-approved-tags .option{background:#f1eaff;color:#633b9d;border:1px solid #d6c8f4}
+.parent-approved-ai{display:inline-flex;align-items:center;justify-content:center;gap:5px;width:100%;min-height:32px;padding:6px;border:1px solid #a5daca;border-radius:9px;background:#ecfaf6;color:#067a66;font-size:11px;font-weight:800;cursor:pointer}
+.parent-approved-ai:hover{background:#d7f5e9}
+.parent-approved-footnote{display:block;color:#617689;font-size:10px;line-height:1.5}
+.parent-approved-view-week:focus-visible,.parent-approved-details:focus-visible,.parent-approved-ai:focus-visible{outline:3px solid #5cbfa4;outline-offset:2px}
+@media(max-width:920px){.parent-approved-list{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:620px){.boarding-menu-manager .parent-approved-menu{padding:12px}.parent-approved-list{grid-template-columns:1fr}.parent-approved-details{grid-template-columns:64px minmax(0,1fr)}.parent-approved-details img{width:64px;height:65px}.parent-approved-copy>strong{font-size:14px}}
+
+/* Các vai trò dùng chung một khu vực món đã duyệt, card 4 cột đồng chiều cao. */
+.boarding-menu-manager .parent-approved-list {
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  align-items:stretch;
+  grid-auto-rows:1fr;
+  gap:12px;
+}
+.boarding-menu-manager .parent-approved-dish {
+  box-sizing:border-box;
+  width:100%;
+  min-width:0;
+  min-height:185px;
+  display:grid;
+  grid-template-rows:minmax(0,1fr) 34px;
+  gap:10px;
+}
+.boarding-menu-manager .parent-approved-details {align-items:start;min-height:0;align-self:stretch}
+.boarding-menu-manager .parent-approved-copy {min-height:0;align-content:start}
+.boarding-menu-manager .parent-approved-copy>strong {
+  display:-webkit-box;
+  overflow:hidden;
+  -webkit-box-orient:vertical;
+  -webkit-line-clamp:2;
+  line-clamp:2;
+  min-height:36px;
+}
+.boarding-menu-manager .parent-approved-ai {height:34px;min-height:34px}
+@media(max-width:1100px){.boarding-menu-manager .parent-approved-list{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:620px){.boarding-menu-manager .parent-approved-list{grid-template-columns:1fr}}
+
+/* Mỗi ngày có chiều rộng tối thiểu đủ để tên món và nút thao tác không va nhau. */
+.boarding-menu-manager .boarding-calendar {
+  grid-template-columns:132px repeat(7,minmax(184px,1fr));
+  min-width:1420px;
+}
+.boarding-menu-manager .meal-calendar-cell {
+  align-items:stretch;
+  gap:9px;
+  padding:10px;
+}
+.boarding-menu-manager .parent-change-dish {
+  box-sizing:border-box;
+  min-height:38px;
+  padding:8px 5px;
+  border-radius:10px;
+  background:#eaf3ff;
+  font-size:11px;
+  white-space:nowrap;
+}
+.boarding-menu-manager .parent-change-dish strong {flex:none}
+.boarding-menu-manager .parent-change-dish small {font-size:10px}
+.boarding-menu-manager .meal-cell-readonly {font-size:11px;line-height:1.4;overflow-wrap:anywhere}
+@media(max-width:760px) {
+  .boarding-menu-manager .boarding-calendar {grid-template-columns:112px repeat(7,184px);min-width:1400px}
+}
+
+/* Ban Giám hiệu: thu gọn món lựa chọn như Phụ huynh, không thay đổi luồng duyệt. */
+.boarding-weekbar-actions{display:flex;align-items:center;justify-content:flex-end;gap:10px;flex-wrap:wrap;min-width:0}
+.boarding-weekbar-actions>small{text-align:right;max-width:420px}
+.board-toggle-options{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:40px;padding:9px 12px;border:1px solid #9dc9ef;border-radius:11px;background:#eaf4ff;color:#165a98;font-size:12px;font-weight:750;line-height:1.3;white-space:nowrap;transition:background .18s,border-color .18s}
+.board-toggle-options strong{display:grid;place-items:center;min-width:24px;height:23px;padding:0 5px;border-radius:20px;background:#1a61a1;color:#fff;font-size:11px;font-variant-numeric:tabular-nums}
+.board-toggle-options:hover{background:#dceeff;border-color:#5a9cd5}
+.board-toggle-options.expanded{background:#eff6f1;border-color:#a3cdb3;color:#226140}
+.board-toggle-options.expanded strong{background:#226140}
+.board-toggle-options:focus-visible,.board-cell-options:focus-visible{outline:3px solid #2563eb;outline-offset:2px}
+.board-cell-options{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;min-height:36px;padding:7px 6px;border:1px dashed #93b7d6;border-radius:10px;background:#f1f8ff;color:#1d608e;font-size:11px;font-weight:750;line-height:1.35}
+.board-cell-options:hover{background:#e1f0ff;border-color:#5f99c7}
+.board-cell-options svg:last-child{margin-left:auto}
+@media(max-width:900px){.boarding-weekbar-actions{width:100%;justify-content:flex-start}.boarding-weekbar-actions>small{text-align:left}.board-toggle-options{white-space:normal}}
+@media(max-width:760px){.board-toggle-options{min-height:43px;font-size:12px}.board-cell-options{font-size:11px}}
+
+/* BGH: danh sách món lựa chọn nằm trong popup, không làm giãn chiều cao từng ô. */
+.board-toggle-options:disabled{opacity:.5;cursor:not-allowed}
+.board-options-dialog{display:flex;flex-direction:column;max-height:min(90dvh,810px);min-height:0;background:var(--surface)}
+.board-options-dialog-header{display:flex;justify-content:space-between;gap:18px;align-items:flex-start;padding:24px 26px 18px;border-bottom:1px solid var(--border)}
+.board-options-dialog-header h2{font-size:22px;line-height:1.25;color:var(--text);margin-top:6px}
+.board-options-dialog-header p{font-size:12px;color:var(--muted);margin-top:7px;text-transform:capitalize}
+.board-options-dialog-summary{display:flex;align-items:center;gap:12px;margin:16px 26px 0;padding:13px 15px;border-radius:13px;background:#eaf4ff;color:#15599d}
+.board-options-dialog-summary>span{display:grid;gap:4px}.board-options-dialog-summary strong{font-size:13px}.board-options-dialog-summary small{font-size:11px;color:#426887}
+.board-options-dialog-content{min-height:0;overflow-y:auto;padding:18px 26px 25px;display:grid;align-content:start;gap:20px}
+.board-options-section{display:grid;gap:11px}
+.board-options-section-heading{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;padding-bottom:9px;border-bottom:1px solid var(--border)}
+.board-options-section-heading>span{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:800;color:var(--text);text-transform:capitalize}
+.board-options-section-heading>small{padding:5px 9px;border-radius:999px;background:var(--surface-alt);color:var(--muted);font-size:10px;font-weight:750}
+.board-options-current{display:flex;align-items:center;gap:7px;padding:9px 11px;border-radius:9px;background:#eaf9f0;color:#216d4c;font-size:11px}
+.board-options-current strong{font-weight:800}
+.board-options-list{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(min(100%,275px),1fr))}
+.board-options-dish{display:flex;min-width:0;flex-direction:column;justify-content:space-between;gap:6px;padding:10px;border:1px solid #dce7f3;border-radius:13px;background:var(--surface)}
+.board-options-dish:hover{border-color:#86b5de}
+.board-options-dish-main{display:grid;grid-template-columns:74px minmax(0,1fr) 16px;align-items:center;gap:10px;min-width:0;width:100%;color:var(--text);text-align:left}
+.board-options-dish-main img{display:block;width:74px;height:72px;object-fit:cover;border-radius:10px;background:var(--surface-alt)}
+.board-options-dish-main>span{display:grid;min-width:0;gap:5px}
+.board-options-dish-main small{font-size:9px;color:#386b92;font-weight:800;letter-spacing:.04em}
+.board-options-dish-main strong{font-size:13px;line-height:1.35;overflow-wrap:anywhere}
+.board-options-dish-main em{font-size:10px;line-height:1.35;font-style:normal;color:var(--muted)}
+.board-options-dish-main>svg{color:#4885aa}
+.board-options-dish-ai{display:inline-flex;justify-content:center;align-items:center;gap:6px;min-height:34px;border-radius:9px;border:1px solid #a9d9c8;background:#eefaf5;color:#177259;font-size:11px;font-weight:750}
+.board-options-dish-ai:hover{background:#dbf4e9}
+.board-options-dish-main:focus-visible,.board-options-dish-ai:focus-visible{outline:2px solid #2563eb;outline-offset:2px}
+.board-options-empty{padding:22px;color:var(--muted);font-size:13px;text-align:center}
+.board-options-dialog-footer{display:flex;gap:8px;align-items:flex-start;border-top:1px solid var(--border);padding:14px 26px;color:var(--muted);font-size:11px;line-height:1.6}
+.board-options-dialog-footer svg{flex:none;color:#267350}
+@media(max-width:760px){.board-options-dialog{height:100dvh;max-height:none}.board-options-dialog-header{padding:20px 16px}.board-options-dialog-header h2{font-size:21px}.board-options-dialog-summary{margin:12px 16px 0}.board-options-dialog-content{padding:14px 16px 20px}.board-options-list{grid-template-columns:1fr}.board-options-dialog-footer{padding:12px 16px max(12px,env(safe-area-inset-bottom))}}
+
+
+/* Đồng bộ thực đơn công khai: Phụ huynh & Phòng VH–XH dùng cùng các món đã duyệt. */
+.boarding-menu-manager.public-view .public-menu-filters {
+  display:flex;align-items:center;flex-wrap:wrap;gap:12px;
+  padding:12px 15px;border:1px solid #dbe7ee;border-radius:13px;
+  background:#f8fbff;margin:12px 0;
+}
+.boarding-menu-manager.public-view .public-menu-filters label {
+  display:flex;align-items:center;gap:8px;color:#334155;font-size:12px;font-weight:700;
+}
+.boarding-menu-manager.public-view .public-menu-filters select {
+  min-height:35px;padding:6px 9px;border:1px solid #cbd5e1;border-radius:8px;
+  background:white;color:#0f172a;font:inherit;max-width:220px;
+}
+.boarding-menu-manager.public-view .public-menu-filters small {
+  display:inline-flex;align-items:center;gap:5px;margin-left:auto;font-size:11px;color:#476276;
+}
+.public-cell-options {
+  display:grid;align-content:start;gap:5px;padding:8px;
+  border:1px solid #c7dbec;border-radius:10px;background:rgba(255,255,255,.84);
+}
+.public-cell-options-heading {
+  display:flex;align-items:center;gap:6px;margin-bottom:3px;color:#165a82;
+  font-size:10px;line-height:1.35;
+}
+.public-cell-option {
+  width:100%;min-height:44px;display:flex;align-items:center;gap:7px;
+  padding:5px;border:1px solid #e4edf5;border-radius:8px;background:#fff;
+  color:#1f2937;text-align:left;transition:background .15s,border-color .15s;
+}
+.public-cell-option:hover {background:#f0f9ff;border-color:#90c4e8}
+.public-cell-option:focus-visible {outline:2px solid #2563eb;outline-offset:2px}
+.public-cell-option img {flex:none;width:35px;height:35px;border-radius:7px;object-fit:cover;background:#f1f5f9}
+.public-cell-option>span {min-width:0;display:grid;gap:2px;flex:1}
+.public-cell-option>span strong {font-size:10px;line-height:1.25;font-weight:700;overflow-wrap:anywhere}
+.public-cell-option>span small {font-size:9px;color:#64748b}
+.public-cell-option.is-default>span small {color:#047857;font-weight:700}
+.public-cell-option>svg {flex:none;color:#94a3b8}
+.boarding-menu-manager.public-view .meal-calendar-cell {align-content:start}
+.boarding-menu-manager.public-view .meal-calendar-cell .calendar-dish {flex:none}
+@media(max-width:760px) {
+  .boarding-menu-manager.public-view .public-menu-filters {align-items:stretch;gap:10px}
+  .boarding-menu-manager.public-view .public-menu-filters label {justify-content:space-between;width:100%}
+  .boarding-menu-manager.public-view .public-menu-filters select {flex:1;max-width:70%}
+  .boarding-menu-manager.public-view .public-menu-filters small {margin-left:0}
+}
+
+
+/* Trạng thái thời gian áp dụng cho cả 3 giao diện: BGH, Phụ huynh, Phòng VH-XH. */
+.boarding-menu-manager .calendar-day.day-past { filter:saturate(.69); }
+.boarding-menu-manager .calendar-day.day-future { filter:saturate(.92); }
+.boarding-menu-manager .calendar-day.day-current {
+  z-index:4;
+  filter:none;
+  box-shadow:inset 0 0 0 3px #fff, inset 0 0 0 5px #123b85, 0 6px 18px rgba(15,23,42,.20);
+}
+.boarding-menu-manager .calendar-day .calendar-day-period {
+  display:inline-flex;align-items:center;justify-content:center;
+  padding:3px 8px;margin:0;border-radius:999px;
+  background:rgba(15,23,42,.32);color:#fff;font-size:10px;font-weight:800;
+  letter-spacing:0;line-height:1.25;
+}
+.boarding-menu-manager .calendar-day.day-current .calendar-day-period {
+  background:#fff;color:#14509a;box-shadow:0 2px 6px rgba(15,23,42,.14);
+}
+.boarding-menu-manager .calendar-day.day-past .calendar-day-period {background:rgba(15,23,42,.44)}
+.boarding-menu-manager .calendar-day.day-future .calendar-day-period {background:rgba(4,57,95,.32)}
+.boarding-menu-manager .calendar-day.day-current:after {
+  content:'';position:absolute;bottom:0;left:18px;right:18px;
+  height:4px;border-radius:999px 999px 0 0;background:#fff;
+}
+.boarding-menu-manager .meal-calendar-cell.day-past { filter:saturate(.80); }
+.boarding-menu-manager .meal-calendar-cell.day-future { filter:none; }
+.boarding-menu-manager .meal-calendar-cell.day-current {
+  position:relative;z-index:1;filter:none;
+  box-shadow:inset 3px 0 #2563eb,inset -3px 0 #2563eb;
+}
+.boarding-menu-manager .meal-calendar-cell.day-current .calendar-dish {
+  border-color:#6aa3e9;box-shadow:0 3px 10px rgba(37,99,235,.13);
+}
+.board-week-today {display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  min-height:36px;padding:7px 11px;border:1px solid #b7cff9;border-radius:10px;
+  background:#eff6ff;color:#1d4ed8;font-weight:750;font-size:11px;white-space:nowrap;
+}
+.board-week-today:hover {background:#dbeafe}
+.board-week-today:focus-visible {outline:3px solid #2563eb;outline-offset:2px}
+.board-date-legend {display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.board-date-legend span {display:inline-flex;align-items:center;gap:5px;color:#475569;
+  font-size:11px;font-weight:650;white-space:nowrap}
+.board-date-legend span:before {content:'';display:inline-block;width:9px;height:9px;border-radius:50%;border:1px solid rgba(15,23,42,.15)}
+.board-date-legend .is-past:before {background:#94a3b8}
+.board-date-legend .is-current:before {background:#2563eb;box-shadow:0 0 0 2px #dbeafe}
+.board-date-legend .is-future:before {background:#38bdf8}
+@media(max-width:760px){
+  .boarding-weekbar-actions{justify-content:flex-start}
+  .board-date-legend{width:100%;gap:10px}
+  .boarding-menu-manager .calendar-day .calendar-day-period{font-size:9px}
+}
+
+/* BGH: xét duyệt từng món và tất cả món đã gửi trong tuần. */
+.board-approve-week{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:40px;padding:8px 14px;border:1px solid #0c7862;border-radius:11px;background:#097b61;color:#fff;font-size:12px;font-weight:800;line-height:1.3;white-space:normal;transition:filter .16s}
+.board-approve-week:hover:not(:disabled){filter:brightness(.92)}
+.board-approve-week:disabled{opacity:.48;cursor:not-allowed}
+.board-approve-week strong{display:grid;place-items:center;min-width:23px;height:23px;padding:0 6px;border-radius:12px;background:#fff;color:#086347;font-size:11px}
+.board-approve-week:focus-visible,.dish-board-approve:focus-visible,.board-options-dish-approve:focus-visible,.board-options-dish-reject:focus-visible{outline:3px solid #2563eb;outline-offset:2px}
+.dish-board-approve{display:flex;align-items:center;justify-content:center;gap:7px;width:100%;min-height:34px;padding:7px 9px;border:1px solid #83c9af;border-radius:9px;background:#e7f8ee;color:#0b7052;font-size:11px;font-weight:800}
+.dish-board-approve:hover{background:#d1f1de}
+.board-options-dish-actions{display:flex;gap:7px;flex-wrap:wrap}
+.board-options-dish-actions>button{display:inline-flex;align-items:center;justify-content:center;gap:6px;flex:1;min-height:34px;padding:7px 9px;border-radius:9px;font-size:11px;font-weight:800;white-space:nowrap}
+.board-options-dish-approve{border:1px solid #93d2b5;background:#e9f9f0;color:#0a6a4a}
+.board-options-dish-approve:hover{background:#d4f2e3}
+.board-options-dish-reject{border:1px solid #f1c9a9;background:#fff6ed;color:#a05217}
+.board-options-dish-reject:hover{background:#ffebd8}
+.board-review-dialog{min-width:0}
+.board-review-impact{display:grid;gap:6px;padding:12px 14px;border:1px solid #a6d7c0;border-radius:12px;background:#effbf4;color:#0d644c}
+.board-review-impact strong{font-size:14px}.board-review-impact span{font-size:11px;line-height:1.5;color:#395e55}
+.board-review-dish-list{display:grid;max-height:240px;overflow-y:auto;gap:7px;padding:2px 1px}
+.board-review-dish-row{display:flex;gap:10px;align-items:center;padding:8px;border:1px solid #e0e8ed;border-radius:10px;background:#fff}
+.board-review-dish-row img{width:44px;height:44px;flex:none;border-radius:8px;object-fit:cover}
+.board-review-dish-row>span:nth-child(2){display:grid;gap:3px;min-width:0;flex:1}
+.board-review-dish-row strong{font-size:12px;line-height:1.35;overflow-wrap:anywhere}
+.board-review-dish-row small{font-size:10px;color:#657383}
+.board-review-status{flex:none;font-size:10px;color:#945c12;font-weight:750}
+.board-review-caution{font-size:11px;line-height:1.6;color:#526375}
+@media(max-width:760px){.board-approve-week{width:100%}.board-review-dish-list{max-height:180px}.board-review-status{display:none}.board-options-dish-actions>button{min-width:105px}}
+
+.dish-board-review-actions{display:flex;gap:6px;align-items:stretch}
+.dish-board-review-actions>button{display:inline-flex;align-items:center;justify-content:center;gap:5px;flex:1;min-width:0;min-height:36px;padding:6px;border-radius:9px;font-size:10px;font-weight:800;line-height:1.25}
+.dish-board-review-actions .dish-board-approve{width:auto}
+.dish-board-reject{border:1px solid #ebc6a6;background:#fff5ed;color:#9a551c}
+.dish-board-reject:hover{background:#ffead8}
+.dish-board-reject:focus-visible{outline:3px solid #2563eb;outline-offset:2px}
